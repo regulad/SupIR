@@ -254,14 +254,14 @@ fun SupIRNavHost(
                 ) {
                     items(model.functions.toList()) { function ->
                         Surface (onClick = {
-                            context.showToast("Sending ${function.functionName}...")
+//                            context.showToast("Sending ${function.functionName}...")
                             try {
                                 function.transmit(supIRViewModel.transmitter!!)
                             } catch (e: Exception) {
-                                context.showToast("Failed to send ${function.functionName}")
+                                context.showToast("Failed to send ${function.functionName}: ${e.message}")
                                 return@Surface
                             }
-                            context.showToast("Sent ${function.functionName} successfully.")
+//                            context.showToast("Sent ${function.functionName} successfully.")
                         }) {
                             Column {
                                 Spacer(modifier = Modifier.height(8.dp))

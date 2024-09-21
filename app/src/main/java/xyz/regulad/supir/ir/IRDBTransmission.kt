@@ -76,7 +76,15 @@ private val uppercaseProtocolFrequencyMap = protocolFrequencyMap.mapKeys { it.ke
 
 val IRDBFunction.frequency: Int get() {
     // case insensitive
-    return uppercaseProtocolFrequencyMap[protocol.uppercase()] ?: defaultFrequency
+    if (protocol.uppercase() == "NEC") {
+        return 38000
+    } else if (protocol.uppercase() == "NECX") {
+        return 38000
+    } else if (protocol.startsWith("RC6")) {
+        return 36000
+    } else {
+        return uppercaseProtocolFrequencyMap[protocol.uppercase()] ?: defaultFrequency
+    }
 }
 
 /**
@@ -103,6 +111,6 @@ fun IRDBFunction.transmit(transmitter: Transmitter) {
 
     val transmitInfo = patternAdapter.createTransmitInfo(patternConverter)
 
-    // this is a blocking call
+    // this is a blocking call: we do not need to repeat; the timing string includes a repeat
     transmitter.transmit(transmitInfo)
 }
