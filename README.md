@@ -8,7 +8,13 @@ SupIR requires an Android phone with an IR blaster. If your phone does not have 
 
 SupIR is licensed under the GPLv3. Non-libre licenses of its dependencies are listed below.
 
+### AndroidInfraRed
+
+https://github.com/OneButtonDeveloper/AndroidInfraRed
+
 ### irdb
+
+https://github.com/probonopd/irdb
 
 irdb
 Copyright (c) 2013-15 Simon Peter and contributors

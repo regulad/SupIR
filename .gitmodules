@@ -1,6 +1,6 @@
 [submodule "irdb"]
 	path = irdb
 	url = https://github.com/probonopd/irdb
-[submodule "makehex/makehex"]
-	path = makehex/makehex
-	url = https://github.com/probonopd/MakeHex
+[submodule "makehex/MakeHex"]
+	path = makehex/MakeHex
+	url = https://github.com/regulad/MakeHex

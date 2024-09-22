@@ -103,7 +103,7 @@ fun IRDBFunction.transmit(transmitter: Transmitter) {
 
     val timingString = timingString() ?: throw UnsupportedOperationException("Failed to get timing string for $protocol")
 
-    Log.d("IRDBFunction", "Transmitting $protocol with timing string $timingString")
+    Log.d("IRDBFunction", "$protocol $device $subdevice $function -> $timingString")
 
     val patternConverter = PatternConverterUtils.fromString(PatternType.Intervals, frequency, timingString)
 

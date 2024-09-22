@@ -1,1 +1,1 @@
-../../../makehex/StdAfx.h
+../../../MakeHex/StdAfx.h
