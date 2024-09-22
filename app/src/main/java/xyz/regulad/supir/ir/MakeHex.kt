@@ -2,9 +2,11 @@ package xyz.regulad.supir.ir
 
 import android.content.Context
 import android.util.Log
+import kotlin.experimental.inv
 
 /**
  * IRP class for handling Infrared Remote Protocol
+ * http://www.hifi-remote.com/wiki/index.php/IRP_Notation
  */
 class IRP(
     var frequency: Double = 38400.0,
@@ -48,7 +50,7 @@ class IRP(
         }
     }
 
-    private val config = IRPConfig(
+    internal val config = IRPConfig(
         digits = arrayOfNulls(16),
         def = arrayOfNulls(26),
         value = IntArray(26),
@@ -60,7 +62,11 @@ class IRP(
     fun readIrpString(str: String): Boolean {
         str.lines().filter { it.isNotEmpty() }.forEach { line ->
             val cleanLine = line.uppercase().replace(Regex("\\s+"), "").substringBefore("'")
-            processLine(cleanLine)
+            try {
+                processLine(cleanLine)
+            } catch (e: Exception) {
+                Log.e("IRP", "Error processing line: $line", e)
+            }
         }
 
         if (config.device[1] >= 0) config.def['S' - 'A'] = null
@@ -127,7 +133,7 @@ class IRP(
             input[i] in 'A'..'Z' -> {
                 val ndx = input[i] - 'A'
                 i++
-                config.def[ndx]?.let { parseVal(it) } ?: run { result.value = config.value[ndx].toDouble() }
+                config.def[ndx]?.let { result = parseVal(it) } ?: run { result.value = config.value[ndx].toDouble() }
             }
             input[i] in '0'..'9' -> {
                 result.value = input.substring(i).takeWhile { it.isDigit() }.toDouble()
@@ -142,9 +148,10 @@ class IRP(
             input[i] == '~' -> {
                 i++
                 val temp = parseVal(input.substring(i), Precedence.UNARY)
-                result.value = -(temp.value + 1)
+                result.value = temp.value.toInt().toByte().inv().toDouble()
                 if (temp.bits > 0) {
                     result.value = (result.value.toInt() and config.mask[temp.bits]).toDouble()
+                    result.bits = temp.bits
                 }
             }
             input[i] == '(' -> {
@@ -381,7 +388,7 @@ object IrEncoder {
         }
     }
 
-    private fun IRDBFunction.irpProtocolDefinition(context: Context): String? {
+    fun IRDBFunction.irpProtocolDefinition(context: Context): String? {
         val protocolDefinitions = getProtocolDefinitions(context)
         var protocolDef = protocolDefinitions[protocol.uppercase()]
 
@@ -399,6 +406,10 @@ object IrEncoder {
         }
 
         return protocolDef
+    }
+
+    fun String.frequency(): Double {
+        return this.split(" ").filter { it.isNotEmpty() }.filter { it.uppercase().startsWith("FREQUENCY=") }.map { it.substringAfter("=").toDouble() }.firstOrNull() ?: 38400.0
     }
 
     /**
@@ -442,6 +453,10 @@ object IrEncoder {
         }
 
         // Generate the IR sequence
+        irpProcessor.config.def['D' - 'A'] = device.toString()
+        irpProcessor.config.def['S' - 'A'] = subdevice.toString()
+        irpProcessor.config.def['F' - 'A'] = function.toString()
+        irpProcessor.config.def['N' - 'A'] = (-1).toString();
         val (s, r, raw) = irpProcessor.generateRawData()
 
         // Convert the sequence to a string
