@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import xyz.regulad.supir.SupIRViewModel
 import xyz.regulad.supir.ir.Brand
@@ -144,7 +145,7 @@ fun SupIRNavHost(
 
             Column {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("From ${brand!!.name}, select the category of the device you want to control")
+                Text("Select the category of the device from ${brand!!.name} you want to control")
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider()
 
@@ -233,6 +234,7 @@ fun SupIRNavHost(
             val model = category?.models?.find { it.identifier == modelRoute.modelIdentifier }
 
             val context = LocalContext.current
+            val transmissionScope = rememberCoroutineScope()
 
             if (model == null) {
                 Text("Loading ${modelRoute.modelIdentifier}...")
@@ -254,14 +256,14 @@ fun SupIRNavHost(
                 ) {
                     items(model.functions.toList()) { function ->
                         Surface (onClick = {
-//                            context.showToast("Sending ${function.functionName}...")
-                            try {
-                                function.transmit(context, supIRViewModel.transmitter!!)
-                            } catch (e: Exception) {
-                                context.showToast("Failed to send ${function.functionName}: ${e.message}")
-                                return@Surface
+                            transmissionScope.launch {
+                                try {
+                                    function.transmit(context, supIRViewModel.transmitter!!)
+                                    context.showToast("Sent ${function.functionName} successfully.")
+                                } catch (e: Exception) {
+                                    context.showToast("Failed to send ${function.functionName}: ${e.message}")
+                                }
                             }
-//                            context.showToast("Sent ${function.functionName} successfully.")
                         }) {
                             Column {
                                 Spacer(modifier = Modifier.height(8.dp))

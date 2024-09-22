@@ -20,7 +20,7 @@ suspend fun <T> Flow<T>.collectUntil(predicate: (T) -> Boolean): T? {
 object FlowCache {
     private val cache = mutableMapOf<Flow<*>, List<*>>()
     private val unfinalizedCache = mutableMapOf<Flow<*>, List<*>>()
-
+    // ignore memory leaks: this is only used once in all code
     private val backingMap = mutableMapOf<Flow<*>, Flow<*>>()
 
     private val mutex = Mutex()

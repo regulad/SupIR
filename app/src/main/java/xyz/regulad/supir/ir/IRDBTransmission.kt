@@ -8,10 +8,15 @@ import android.util.Log
 import com.obd.infrared.patterns.PatternAdapter
 import com.obd.infrared.patterns.PatternConverterUtils
 import com.obd.infrared.patterns.PatternType
+import com.obd.infrared.transmit.TransmitInfo
 import com.obd.infrared.transmit.Transmitter
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import xyz.regulad.supir.ir.IrEncoder.frequency
 import xyz.regulad.supir.ir.IrEncoder.irpProtocolDefinition
 import xyz.regulad.supir.ir.IrEncoder.timingString
+import xyz.regulad.supir.ir.TransmitterManager.transmitSuspending
+import java.util.*
 
 fun CarrierFrequencyRange.contains(frequency: Int): Boolean {
     return frequency in minFrequency..maxFrequency
@@ -27,7 +32,21 @@ fun IRDBFunction.isTransmittable(context: Context): Boolean {
     } ?: false
 }
 
-fun IRDBFunction.transmit(context: Context, transmitter: Transmitter) {
+object TransmitterManager {
+    private val transmitterMutexMap = Collections.synchronizedMap(WeakHashMap<Transmitter, Mutex>())
+
+    suspend fun Transmitter.transmitSuspending(transmitInfo: TransmitInfo) {
+        val mutex = transmitterMutexMap.getOrPut(this) { Mutex() }
+        mutex.withLock {
+            transmit(transmitInfo)
+        }
+    }
+}
+
+/*
+ * Transmit the IRDBFunction blockingly
+ */
+suspend fun IRDBFunction.transmit(context: Context, transmitter: Transmitter) {
     // we need to create the battery
 
     val (frequency, timingString) = timingString(context) ?: throw UnsupportedOperationException("Failed to get timing string for $protocol")
@@ -41,5 +60,5 @@ fun IRDBFunction.transmit(context: Context, transmitter: Transmitter) {
     val transmitInfo = patternAdapter.createTransmitInfo(patternConverter)
 
     // this is a blocking call: we do not need to repeat; the timing string includes a repeat
-    transmitter.transmit(transmitInfo)
+    transmitter.transmitSuspending(transmitInfo)
 }
