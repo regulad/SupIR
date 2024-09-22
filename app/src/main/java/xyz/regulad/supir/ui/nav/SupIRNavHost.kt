@@ -256,7 +256,7 @@ fun SupIRNavHost(
                         Surface (onClick = {
 //                            context.showToast("Sending ${function.functionName}...")
                             try {
-                                function.transmit(supIRViewModel.transmitter!!)
+                                function.transmit(context, supIRViewModel.transmitter!!)
                             } catch (e: Exception) {
                                 context.showToast("Failed to send ${function.functionName}: ${e.message}")
                                 return@Surface

@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val viewmodel = SupIRViewModel(application)
-        val allBrands  = loadAllBrands(assets)
+        val allBrands  = loadAllBrands(this)
 
         setContent {
             SupIRTheme {

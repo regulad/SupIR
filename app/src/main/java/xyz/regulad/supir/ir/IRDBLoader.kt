@@ -1,12 +1,12 @@
 package xyz.regulad.supir.ir
 
+import android.content.Context
 import android.content.res.AssetManager
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOn
-import xyz.regulad.makehex.IRDBFunction
 import xyz.regulad.supir.util.FlowCache.cached
 import java.io.InputStream
 
@@ -14,26 +14,26 @@ private const val TAG = "IRDBLoader"
 
 data class IndexEntry(val brandName: String, val modelCategory: String, val fileName: String)
 
-data class Brand(private val assetManager: AssetManager, val name: String, private val indexEntries: List<IndexEntry>) {
+data class Brand(private val context: Context, val name: String, private val indexEntries: List<IndexEntry>) {
     val categories by lazy {
         indexEntries
             .groupBy { it.modelCategory }
-            .map { (category, entries) -> Category(assetManager, name, category, entries) }
+            .map { (category, entries) -> Category(context, name, category, entries) }
             .filter { it.models.any() }
             .sortedBy { it.name }
     }
 }
 
-data class Category(private val assetManager: AssetManager, private val brandName: String, val name: String, private val indexEntries: List<IndexEntry>) {
+data class Category(private val context: Context, private val brandName: String, val name: String, private val indexEntries: List<IndexEntry>) {
     val models by lazy {
         indexEntries
-            .map { Model(assetManager, brandName, name, it.fileName) }
+            .map { Model(context, brandName, name, it.fileName) }
             .filter { it.functions.any() }
             .sortedBy { it.identifier }
     }
 }
 
-data class Model(private val assetManager: AssetManager, private val brandName: String, val category: String, val identifier: String) {
+data class Model(private val context: Context, private val brandName: String, val category: String, val identifier: String) {
     companion object {
         private val functionMap = mutableMapOf<Triple<String, String, String>, List<IRDBFunction>>()
     }
@@ -41,10 +41,10 @@ data class Model(private val assetManager: AssetManager, private val brandName: 
     val functions by lazy {
         functionMap.getOrPut(Triple(brandName, category, identifier)) {
             val csvInputStream: InputStream = try {
-                assetManager.open("codes/$brandName.$category/$identifier.csv")
+                context.assets.open("codes/$brandName.$category/$identifier.csv")
             } catch (e: Exception) {
                 try {
-                    assetManager.open("codes/$brandName/$category/$identifier.csv")
+                    context.assets.open("codes/$brandName/$category/$identifier.csv")
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to load $brandName/$category/$identifier.csv")
                     return@lazy emptyList<IRDBFunction>()
@@ -73,16 +73,16 @@ data class Model(private val assetManager: AssetManager, private val brandName: 
                         )
                     }
                 }
-                .filter { it.transmittable }
+                .filter { it.isTransmittable(context) }
                 .toList()
         }
     }
 }
 
-fun loadAllBrands(assetManager: AssetManager): Flow<Brand> {
+fun loadAllBrands(context: Context): Flow<Brand> {
     Log.d(TAG, "Loading IRDB Index")
 
-    return assetManager.open("codes/index")
+    return context.assets.open("codes/index")
         .reader()
         .readLines()
         .asSequence()
@@ -93,7 +93,7 @@ fun loadAllBrands(assetManager: AssetManager): Flow<Brand> {
         .groupBy { it.brandName } // terminal
         .asSequence()
         .sortedBy { it.key } // from here on, do things on demand
-        .map { (brandName, entries) -> Brand(assetManager, brandName, entries) }
+        .map { (brandName, entries) -> Brand(context, brandName, entries) }
         .filter { it.categories.any() }
         .asFlow()
         .flowOn(Dispatchers.IO)
