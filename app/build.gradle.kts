@@ -72,4 +72,7 @@ dependencies {
 
     // HTC & LG support
     compileOnly(files("./lib/HTCIR.jar", "./lib/QRemoteSDK.jar"))
+
+    implementation(project(":makehex"))
+
 }

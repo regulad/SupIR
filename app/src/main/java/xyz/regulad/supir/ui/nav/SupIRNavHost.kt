@@ -24,6 +24,7 @@ import xyz.regulad.supir.SupIRViewModel
 import xyz.regulad.supir.ir.Brand
 import xyz.regulad.supir.ir.Category
 import xyz.regulad.supir.ir.Model
+import xyz.regulad.supir.ir.transmit
 import xyz.regulad.supir.ui.components.FlowLazyColumn
 import xyz.regulad.supir.util.FlowCache.cachedCollectUntil
 
