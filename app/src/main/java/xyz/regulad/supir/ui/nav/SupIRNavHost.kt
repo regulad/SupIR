@@ -1,5 +1,7 @@
 package xyz.regulad.supir.ui.nav
 
+import android.content.Context
+import android.os.Vibrator
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -234,7 +237,8 @@ fun SupIRNavHost(
             val model = category?.models?.find { it.identifier == modelRoute.modelIdentifier }
 
             val context = LocalContext.current
-            val transmissionScope = rememberCoroutineScope()
+            val transmissionScope = rememberCoroutineScope { Dispatchers.Main }
+            val vibrator = LocalContext.current.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
             if (model == null) {
                 Text("Loading ${modelRoute.modelIdentifier}...")
@@ -257,6 +261,14 @@ fun SupIRNavHost(
                     items(model.functions.toList()) { function ->
                         Surface (onClick = {
                             transmissionScope.launch {
+                                try {
+                                    if (vibrator.hasVibrator()) {
+                                        vibrator.vibrate(50)
+                                    }
+                                } catch (e: Exception) {
+                                    // ignore
+                                }
+
                                 try {
                                     function.transmit(context, supIRViewModel.transmitter!!)
                                     context.showToast("Sent ${function.functionName} successfully.")

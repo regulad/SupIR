@@ -22,16 +22,6 @@ fun CarrierFrequencyRange.contains(frequency: Int): Boolean {
     return frequency in minFrequency..maxFrequency
 }
 
-fun IRDBFunction.isTransmittable(context: Context): Boolean {
-    return irpProtocolDefinition(context)?.frequency()?.let { freq ->
-        // if the device has ConsumerIRManager, check to see if the frequency is supported
-        // if the device does not have ConsumerIRManager, we can assume that the frequency is supported
-
-        val irService = context.getSystemService(CONSUMER_IR_SERVICE) as ConsumerIrManager?
-        irService == null || irService.carrierFrequencies.any { it.contains(freq.toInt()) }
-    } ?: false
-}
-
 object TransmitterManager {
     private val transmitterMutexMap = Collections.synchronizedMap(WeakHashMap<Transmitter, Mutex>())
 
@@ -41,6 +31,19 @@ object TransmitterManager {
             transmit(transmitInfo)
         }
     }
+
+    private val protocolCompatibilityCache = mutableMapOf<String, Boolean>()
+
+    fun IRDBFunction.isTransmittable(context: Context): Boolean =
+        protocolCompatibilityCache.getOrPut(protocol) {
+            return irpProtocolDefinition(context)?.frequency()?.let { freq ->
+                // if the device has ConsumerIRManager, check to see if the frequency is supported
+                // if the device does not have ConsumerIRManager, we can assume that the frequency is supported
+
+                val irService = context.getSystemService(CONSUMER_IR_SERVICE) as ConsumerIrManager?
+                irService == null || irService.carrierFrequencies.any { it.contains(freq.toInt()) }
+            } ?: false
+        }
 }
 
 /*
@@ -59,6 +62,15 @@ suspend fun IRDBFunction.transmit(context: Context, transmitter: Transmitter) {
 
     val transmitInfo = patternAdapter.createTransmitInfo(patternConverter)
 
-    // this is a blocking call: we do not need to repeat; the timing string includes a repeat
-    transmitter.transmitSuspending(transmitInfo)
+    // this is a blocking call: we do not need to repeat; the timing string includes a repeat (except special cases)
+
+    val repeats = when (protocol.uppercase()) {
+        "NEC" -> 2
+        "NECX" -> 2
+        else -> 1
+    }
+
+    repeat(repeats) {
+        transmitter.transmitSuspending(transmitInfo)
+    }
 }
