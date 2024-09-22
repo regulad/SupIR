@@ -21,4 +21,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "SupIR"
 include(":app")
-include(":makehex")

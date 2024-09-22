@@ -3,6 +3,27 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
+        <entry key="/app/src/main/assets/codes/2wire/Unknown_2wire/32,159.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/app/src/main/assets/codes/3M/Projector/134,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/app/src/main/assets/codes/3M/Video Projector/134,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/app/src/main/assets/codes/ABS/SAT_8776/8,0.csv">
           <value>
             <Attribute>
@@ -74,6 +95,20 @@
           </value>
         </entry>
         <entry key="/app/src/main/assets/codes/Akai/Unknown_RC-W201G/137,119.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/app/src/main/assets/codes/Arcam/Pre-Amplifier/16,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/app/src/main/assets/codes/DirecTV/Unknown_RC64/12,-1.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -164,7 +199,168 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/app/src/main/assets/codes/Philips/Unknown_SBC-RU-520/5,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/app/src/main/assets/codes/Sony/Unknown_D1000/89,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/app/src/main/assets/codes/Vizio/Unknown_VX37L/4,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/app/src/main/assets/codes/Vizio/Unknown_Vizio/4,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/app/src/main/assets/codes/Xtreamer/Unknown_Xtreamer/0,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Aragon/Pre-Amplifier/31,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Arcam/Pre-Amplifier/16,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Denon/Receiver/4,1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Denon/Receiver/4,3.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/DirecTV/Unknown_RC64/12,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Fosgate/Surround Processor/132,66.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Integra/Pre-Amplifier/210,108.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Integra/Receiver/210,108.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/JVC/Monitor/67,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/JVC/VCR/67,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/KEY DIGITAL/Matrix Switcher/130,19.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Loewe/Unknown_8500H/110,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Motorola/Unknown_4dtv/0,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Onkyo/Receiver/210,108.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Pace/Unknown_pacetwin/34,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Sanyo/Unknown_B12628/49,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Xtreamer/Unknown_Xtreamer/0,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Yamaha/Receiver/122,-1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/irdb/codes/Yamaha/Sound Projector/120,-1.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
