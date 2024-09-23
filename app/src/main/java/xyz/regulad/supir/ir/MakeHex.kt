@@ -422,7 +422,7 @@ object IrEncoder {
      * @return A string containing the encoded IR signal as space-separated durations,
      *         or null if the protocol is not supported or an error occurs.
      */
-    fun IRDBFunction.timingString(context: Context): Pair<Double, String>? {
+    fun IRDBFunction.timingString(context: Context): Pair<Double, DoubleArray>? {
         // Prepare the IRP string
         val irp = StringBuilder()
 
@@ -454,12 +454,17 @@ object IrEncoder {
 
         // Generate the IR sequence
         irpProcessor.config.def['D' - 'A'] = device.toString()
-        irpProcessor.config.def['S' - 'A'] = subdevice.toString()
+        irpProcessor.config.def['S' - 'A'] =
+            (if (subdevice != -1) subdevice else device.inv()).toString() // "CRC" for NEC
         irpProcessor.config.def['F' - 'A'] = function.toString()
         irpProcessor.config.def['N' - 'A'] = (-1).toString();
-        val (s, r, raw) = irpProcessor.generateRawData()
+        val (_, _, raw) = irpProcessor.generateRawData()
 
         // Convert the sequence to a string
-        return Pair(irpProcessor.frequency, raw.joinToString(" ") { it.toInt().toString() })
+        return Pair(irpProcessor.frequency, raw)
+    }
+
+    fun IRDBFunction.transmissionLength(context: Context): Double? {
+        return timingString(context)?.second?.sum()
     }
 }

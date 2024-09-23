@@ -6,11 +6,12 @@ import android.hardware.ConsumerIrManager
 import android.hardware.ConsumerIrManager.CarrierFrequencyRange
 import android.util.Log
 import com.obd.infrared.patterns.PatternAdapter
-import com.obd.infrared.patterns.PatternConverterUtils
+import com.obd.infrared.patterns.PatternConverter
 import com.obd.infrared.patterns.PatternType
 import com.obd.infrared.transmit.TransmitInfo
 import com.obd.infrared.transmit.Transmitter
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -31,7 +32,7 @@ object TransmitterManager {
         val mutex = transmitterMutexMap.getOrPut(this) { Mutex() }
         mutex.withLock {
             withContext(Dispatchers.IO) {
-                transmit(transmitInfo)
+                transmit(transmitInfo) // hard block, run on dispatcher
             }
         }
     }
@@ -58,9 +59,10 @@ suspend fun IRDBFunction.transmit(context: Context, transmitter: Transmitter) {
 
     val (frequency, timingString) = timingString(context) ?: throw UnsupportedOperationException("Failed to get timing string for $protocol")
 
-    Log.d("IRDBFunction", "$protocol $device $subdevice $function -> $timingString")
+    Log.d("IRDBFunction", "$protocol $device $subdevice $function -> ${timingString.joinToString(" ")}")
 
-    val patternConverter = PatternConverterUtils.fromString(PatternType.Intervals, frequency.toInt(), timingString)
+    val patternConverter =
+        PatternConverter(PatternType.Intervals, frequency.toInt(), *(timingString.map { it.toInt() }.toIntArray()))
 
     val patternAdapter = PatternAdapter(transmitter.transmitterType)
 
@@ -76,5 +78,6 @@ suspend fun IRDBFunction.transmit(context: Context, transmitter: Transmitter) {
 
     repeat(repeats) {
         transmitter.transmitSuspending(transmitInfo)
+        delay(40) // 40ms delay between repeats
     }
 }
