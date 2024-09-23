@@ -8,8 +8,7 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
@@ -18,26 +17,35 @@ import kotlinx.coroutines.flow.Flow
 fun <T : Any> FlowLazyColumn(
     flow: Flow<T>,
     modifier: Modifier = Modifier,
-    itemContent: @Composable LazyItemScope.(item: T) -> Unit
+    loadingContent: @Composable () -> Unit = { Text("Loading...") },
+    itemContent: @Composable LazyItemScope.(item: T) -> Unit,
 ) {
+    var flowFinished by remember { mutableStateOf(false) }
     val items = produceState(initialValue = emptyList<T>()) {
+        flowFinished = false
         flow.collect { item ->
             value = value + item
         }
+        flowFinished = true
     }
 
     val lazyColumnState = rememberLazyListState()
 
     if (items.value.isEmpty()) {
         Column(modifier = modifier) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Loading...")
-            Spacer(modifier = Modifier.height(8.dp))
+            loadingContent()
         }
     } else {
         LazyColumn(modifier = modifier, state = lazyColumnState) {
             items(items.value) { item ->
                 itemContent(item)
+            }
+
+            if (!flowFinished) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    loadingContent()
+                }
             }
         }
     }

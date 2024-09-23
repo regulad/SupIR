@@ -2,17 +2,13 @@ package xyz.regulad.supir.ui.nav
 
 import android.content.Context
 import android.os.Vibrator
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -31,6 +27,20 @@ import xyz.regulad.supir.ir.Model
 import xyz.regulad.supir.ir.transmit
 import xyz.regulad.supir.ui.components.FlowLazyColumn
 import xyz.regulad.supir.util.FlowCache.cachedCollectUntil
+
+@Composable
+fun LoadingList() {
+    // centrally placed spinny
+    Box (
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.width(64.dp).align(Alignment.Center),
+            color = MaterialTheme.colorScheme.secondary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+    }
+}
 
 @Serializable
 data object MainRoute
@@ -97,7 +107,8 @@ fun SupIRNavHost(
 
                 FlowLazyColumn(
                     flow = allBrandsFlow,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    loadingContent = { LoadingList() }
                 ) { brand ->
                     Surface (onClick = {
                         navigateToBrand(brand)
@@ -142,7 +153,7 @@ fun SupIRNavHost(
             }
 
             if (brand == null) {
-                Text("Loading ${brandRoute.brandName}...")
+                LoadingList()
                 return@composable
             }
 
@@ -192,7 +203,7 @@ fun SupIRNavHost(
             }
 
             if (category == null) {
-                Text("Loading ${categoryRoute.categoryName}s...")
+                LoadingList()
                 return@composable
             }
 
@@ -241,7 +252,7 @@ fun SupIRNavHost(
             val vibrator = LocalContext.current.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
             if (model == null) {
-                Text("Loading ${modelRoute.modelIdentifier}...")
+                LoadingList()
                 return@composable
             }
 
