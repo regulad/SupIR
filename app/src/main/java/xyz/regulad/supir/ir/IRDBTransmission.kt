@@ -10,8 +10,10 @@ import com.obd.infrared.patterns.PatternConverterUtils
 import com.obd.infrared.patterns.PatternType
 import com.obd.infrared.transmit.TransmitInfo
 import com.obd.infrared.transmit.Transmitter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import xyz.regulad.supir.ir.IrEncoder.frequency
 import xyz.regulad.supir.ir.IrEncoder.irpProtocolDefinition
 import xyz.regulad.supir.ir.IrEncoder.timingString
@@ -28,7 +30,9 @@ object TransmitterManager {
     suspend fun Transmitter.transmitSuspending(transmitInfo: TransmitInfo) {
         val mutex = transmitterMutexMap.getOrPut(this) { Mutex() }
         mutex.withLock {
-            transmit(transmitInfo)
+            withContext(Dispatchers.IO) {
+                transmit(transmitInfo)
+            }
         }
     }
 
