@@ -2,7 +2,12 @@ package xyz.regulad.supir.ir
 
 import android.content.Context
 import android.util.Log
+import java.util.*
 import kotlin.experimental.inv
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.ExperimentalTime
+import kotlin.time.toDuration
 
 /**
  * IRP class for handling Infrared Remote Protocol
@@ -422,7 +427,7 @@ object IrEncoder {
      * @return A string containing the encoded IR signal as space-separated durations,
      *         or null if the protocol is not supported or an error occurs.
      */
-    fun IRDBFunction.timingString(context: Context): Pair<Double, DoubleArray>? {
+    private fun IRDBFunction.calculateTimingString(context: Context): Pair<Double, DoubleArray>? {
         // Prepare the IRP string
         val irp = StringBuilder()
 
@@ -464,7 +469,33 @@ object IrEncoder {
         return Pair(irpProcessor.frequency, raw)
     }
 
-    fun IRDBFunction.transmissionLength(context: Context): Double? {
-        return timingString(context)?.second?.sum()
+    private val timingStringCache = Collections.synchronizedMap(WeakHashMap<IRDBFunction, Pair<Double, DoubleArray>?>())
+
+    fun IRDBFunction.timingString(context: Context) =
+        timingStringCache.getOrPut(this) { calculateTimingString(context) }
+
+    @OptIn(ExperimentalTime::class)
+    fun IRDBFunction.transmissionLengthUs(context: Context): Double? {
+        return when {
+            protocol.uppercase().startsWith("NEC") -> Duration.convert(
+                67.5,
+                DurationUnit.MILLISECONDS,
+                DurationUnit.MICROSECONDS
+            )
+
+            else -> timingString(context)?.second?.sum()
+        }
+    }
+
+    fun IRDBFunction.transmissionLengthDuration(context: Context): Duration? {
+        return transmissionLengthUs(context)?.toDuration(DurationUnit.MICROSECONDS)
     }
 }
+
+//https://techdocs.altium.com/display/FPGA/NEC+Infrared+Transmission+Protocol
+@OptIn(ExperimentalTime::class)
+val necRepeatPattern = intArrayOf(
+    Duration.convert(9.0, DurationUnit.MILLISECONDS, DurationUnit.MICROSECONDS).toInt(),
+    Duration.convert(2.25, DurationUnit.MILLISECONDS, DurationUnit.MICROSECONDS).toInt(),
+    562.5.toInt()
+)

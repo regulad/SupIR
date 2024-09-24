@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -17,16 +18,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import xyz.regulad.supir.SupIRViewModel
-import xyz.regulad.supir.ir.Brand
-import xyz.regulad.supir.ir.Category
-import xyz.regulad.supir.ir.Model
-import xyz.regulad.supir.ir.transmit
+import xyz.regulad.supir.ir.*
+import xyz.regulad.supir.ir.IrEncoder.transmissionLengthDuration
 import xyz.regulad.supir.ui.components.FlowLazyColumn
 import xyz.regulad.supir.util.FlowCache.cachedCollectUntil
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 @Composable
 fun LoadingList() {
@@ -35,7 +37,9 @@ fun LoadingList() {
         modifier = Modifier.fillMaxSize(),
     ) {
         CircularProgressIndicator(
-            modifier = Modifier.width(64.dp).align(Alignment.Center),
+            modifier = Modifier
+                .width(64.dp)
+                .align(Alignment.Center),
             color = MaterialTheme.colorScheme.secondary,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
@@ -270,24 +274,78 @@ fun SupIRNavHost(
                     state = lazyColumnState
                 ) {
                     items(model.functions.toList()) { function ->
-                        Surface (onClick = {
-                            transmissionScope.launch {
-                                try {
-                                    if (vibrator.hasVibrator()) {
-                                        vibrator.vibrate(50)
-                                    }
-                                } catch (e: Exception) {
-                                    // ignore
-                                }
+                        var isPressed by remember { mutableStateOf(false) }
 
-                                try {
-                                    function.transmit(context, supIRViewModel.transmitter!!)
-                                    context.showToast("Sent ${function.functionName} successfully.")
-                                } catch (e: Exception) {
-                                    context.showToast("Failed to send ${function.functionName}: ${e.message}")
+                        DisposableEffect(isPressed) {
+                            var shouldTransmit = true
+
+                            if (isPressed) {
+                                transmissionScope.launch {
+                                    try {
+                                        function.transmit(context, supIRViewModel.transmitter!!)
+                                        context.showToast("Sent ${function.functionName} successfully.")
+                                    } catch (e: Exception) {
+                                        context.showToast("Failed to send ${function.functionName}: ${e.message}")
+                                        return@launch
+                                    }
+
+                                    var transmissionLength = function.transmissionLengthDuration(context)
+
+                                    val isNecFamilyFunction = function.protocol.uppercase().startsWith("NEC")
+                                    if (isNecFamilyFunction) {
+                                        // this is an NEC family function, they have a special repeat function
+                                        while (shouldTransmit) {
+                                            val transmissionDelay =
+                                                (108).toDuration(DurationUnit.MILLISECONDS) - transmissionLength!! // guaranteed with NEC
+                                            delay(transmissionDelay)
+
+                                            // transmit the repeat pattern
+                                            supIRViewModel.transmitter.transmitMicrosecondIntArray(
+                                                38000,
+                                                necRepeatPattern
+                                            )
+                                            transmissionLength =
+                                                necRepeatPattern.sum().toDuration(DurationUnit.MICROSECONDS)
+                                        }
+                                    }
                                 }
                             }
-                        }) {
+
+                            onDispose {
+                                shouldTransmit = false
+                            }
+                        }
+
+                        Surface(
+                            onClick = {
+                                transmissionScope.launch {
+                                    try {
+                                        if (vibrator.hasVibrator()) {
+                                            vibrator.vibrate(50)
+                                        }
+                                    } catch (e: Exception) {
+                                        // ignore
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .pointerInput(Unit) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            val event = awaitPointerEvent()
+                                            when {
+                                                event.changes.any { it.pressed } -> {
+                                                    isPressed = true
+                                                }
+
+                                                event.changes.any { !it.pressed } -> {
+                                                    isPressed = false
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                        ) {
                             Column {
                                 Spacer(modifier = Modifier.height(8.dp))
 

@@ -11,7 +11,6 @@ import com.obd.infrared.patterns.PatternType
 import com.obd.infrared.transmit.TransmitInfo
 import com.obd.infrared.transmit.Transmitter
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -51,6 +50,19 @@ object TransmitterManager {
         }
 }
 
+suspend fun Transmitter.transmitMicrosecondIntArray(frequency: Int, pattern: IntArray) {
+    val patternConverter =
+        PatternConverter(PatternType.Intervals, frequency, *pattern)
+
+    val patternAdapter = PatternAdapter(transmitterType)
+
+    val transmitInfo = patternAdapter.createTransmitInfo(patternConverter)
+
+    // this is a blocking call: we do not need to repeat; the timing string includes a repeat (except special cases)
+
+    transmitSuspending(transmitInfo)
+}
+
 /*
  * Transmit the IRDBFunction blockingly
  */
@@ -61,23 +73,5 @@ suspend fun IRDBFunction.transmit(context: Context, transmitter: Transmitter) {
 
     Log.d("IRDBFunction", "$protocol $device $subdevice $function -> ${timingString.joinToString(" ")}")
 
-    val patternConverter =
-        PatternConverter(PatternType.Intervals, frequency.toInt(), *(timingString.map { it.toInt() }.toIntArray()))
-
-    val patternAdapter = PatternAdapter(transmitter.transmitterType)
-
-    val transmitInfo = patternAdapter.createTransmitInfo(patternConverter)
-
-    // this is a blocking call: we do not need to repeat; the timing string includes a repeat (except special cases)
-
-    val repeats = when (protocol.uppercase()) {
-        "NEC" -> 2
-        "NECX" -> 2
-        else -> 1
-    }
-
-    repeat(repeats) {
-        transmitter.transmitSuspending(transmitInfo)
-        delay(40) // 40ms delay between repeats
-    }
+    transmitter.transmitMicrosecondIntArray(frequency.toInt(), timingString.map { it.toInt() }.toIntArray())
 }
