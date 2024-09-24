@@ -2,14 +2,19 @@ package xyz.regulad.supir.ui.nav
 
 import android.content.Context
 import android.os.Vibrator
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -17,10 +22,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import xyz.regulad.supir.SupIRViewModel
 import xyz.regulad.supir.ir.*
@@ -31,7 +34,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 @Composable
-fun LoadingList() {
+fun FullscreenLoader() {
     // centrally placed spinny
     Box (
         modifier = Modifier.fillMaxSize(),
@@ -62,6 +65,9 @@ data class CategoryRoute(val brandName: String, val categoryName: String)
 
 @Serializable
 data class ModelRoute(val brandName: String, val categoryName: String, val modelIdentifier: String)
+
+@Serializable
+data class FunctionRoute(val brandName: String, val categoryName: String, val modelIdentifier: String, val functionIdentifier: String)
 
 @Composable
 fun SupIRNavHost(
@@ -112,7 +118,7 @@ fun SupIRNavHost(
                 FlowLazyColumn(
                     flow = allBrandsFlow,
                     modifier = Modifier.fillMaxSize(),
-                    loadingContent = { LoadingList() }
+                    loadingContent = { FullscreenLoader() }
                 ) { brand ->
                     Surface (onClick = {
                         navigateToBrand(brand)
@@ -157,7 +163,7 @@ fun SupIRNavHost(
             }
 
             if (brand == null) {
-                LoadingList()
+                FullscreenLoader()
                 return@composable
             }
 
@@ -207,7 +213,7 @@ fun SupIRNavHost(
             }
 
             if (category == null) {
-                LoadingList()
+                FullscreenLoader()
                 return@composable
             }
 
@@ -251,13 +257,20 @@ fun SupIRNavHost(
             val category = brand?.categories?.find { it.name == modelRoute.categoryName }
             val model = category?.models?.find { it.identifier == modelRoute.modelIdentifier }
 
-            val context = LocalContext.current
-            val transmissionScope = rememberCoroutineScope { Dispatchers.Main }
-            val vibrator = LocalContext.current.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-
             if (model == null) {
-                LoadingList()
+                FullscreenLoader()
                 return@composable
+            }
+
+            fun navigateToFunction(function: IRDBFunction) {
+                navController.navigate(
+                    FunctionRoute(
+                        brand!!.name,
+                        category.name,
+                        model.identifier,
+                        function.identifier
+                    )
+                )
             }
 
             Column {
@@ -274,77 +287,10 @@ fun SupIRNavHost(
                     state = lazyColumnState
                 ) {
                     items(model.functions.toList()) { function ->
-                        var isPressed by remember { mutableStateOf(false) }
-
-                        DisposableEffect(isPressed) {
-                            var shouldTransmit = true
-
-                            if (isPressed) {
-                                transmissionScope.launch {
-                                    try {
-                                        function.transmit(context, supIRViewModel.transmitter!!)
-                                        context.showToast("Sent ${function.functionName} successfully.")
-                                    } catch (e: Exception) {
-                                        context.showToast("Failed to send ${function.functionName}: ${e.message}")
-                                        return@launch
-                                    }
-
-                                    var transmissionLength = function.transmissionLengthDuration(context)
-
-                                    val isNecFamilyFunction = function.protocol.uppercase().startsWith("NEC")
-                                    if (isNecFamilyFunction) {
-                                        // this is an NEC family function, they have a special repeat function
-                                        while (shouldTransmit) {
-                                            val transmissionDelay =
-                                                (108).toDuration(DurationUnit.MILLISECONDS) - transmissionLength!! // guaranteed with NEC
-                                            delay(transmissionDelay)
-
-                                            // transmit the repeat pattern
-                                            supIRViewModel.transmitter.transmitMicrosecondIntArray(
-                                                38000,
-                                                necRepeatPattern
-                                            )
-                                            transmissionLength =
-                                                necRepeatPattern.sum().toDuration(DurationUnit.MICROSECONDS)
-                                        }
-                                    }
-                                }
-                            }
-
-                            onDispose {
-                                shouldTransmit = false
-                            }
-                        }
-
                         Surface(
                             onClick = {
-                                transmissionScope.launch {
-                                    try {
-                                        if (vibrator.hasVibrator()) {
-                                            vibrator.vibrate(50)
-                                        }
-                                    } catch (e: Exception) {
-                                        // ignore
-                                    }
-                                }
-                            },
-                            modifier = Modifier
-                                .pointerInput(Unit) {
-                                    awaitPointerEventScope {
-                                        while (true) {
-                                            val event = awaitPointerEvent()
-                                            when {
-                                                event.changes.any { it.pressed } -> {
-                                                    isPressed = true
-                                                }
-
-                                                event.changes.any { !it.pressed } -> {
-                                                    isPressed = false
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                navigateToFunction(function)
+                            }
                         ) {
                             Column {
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -356,6 +302,99 @@ fun SupIRNavHost(
                                 HorizontalDivider()
                             }
                         }
+                    }
+                }
+            }
+        }
+        composable<FunctionRoute> { backStackEntry ->
+            val functionRoute: FunctionRoute = backStackEntry.toRoute()
+
+            val brand by produceState<Brand?>(null) {
+                value = allBrandsFlow.cachedCollectUntil { it.name == functionRoute.brandName }!!
+            }
+            val category = brand?.categories?.find { it.name == functionRoute.categoryName }
+            val model = category?.models?.find { it.identifier == functionRoute.modelIdentifier }
+            val function = model?.functions?.find { it.identifier == functionRoute.functionIdentifier }
+
+            if (function == null) {
+                FullscreenLoader()
+                return@composable
+            }
+
+            val context = LocalContext.current
+            val transmissionScope = rememberCoroutineScope { Dispatchers.Main }
+            val vibrator = LocalContext.current.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .clip(CircleShape)
+                        .wrapContentSize(Alignment.Center)
+                        .pointerInput(Unit) {
+                            coroutineScope {
+                                detectTapGestures(
+                                    onPress = {
+                                        try {
+                                            if (vibrator.hasVibrator()) {
+                                                vibrator.vibrate(50)
+                                            }
+                                        } catch (e: Exception) {
+                                            // ignore
+                                        }
+
+                                        try {
+                                            function.transmit(context, supIRViewModel.transmitter!!)
+                                            context.showToast("Sent ${function.functionName} successfully.")
+                                        } catch (e: Exception) {
+                                            context.showToast("Failed to send ${function.functionName}: ${e.message}")
+                                            return@detectTapGestures
+                                        }
+
+                                        val retransmissionJob = transmissionScope.launch {
+                                            var transmissionLength = function.transmissionLengthDuration(context)
+
+                                            val isNecFamilyFunction = function.protocol.uppercase().startsWith("NEC")
+                                            if (isNecFamilyFunction) {
+                                                // this is an NEC family function, they have a special repeat function
+                                                while (isActive) {
+                                                    val transmissionDelay =
+                                                        (108).toDuration(DurationUnit.MILLISECONDS) - transmissionLength!! // guaranteed with NEC
+                                                    delay(transmissionDelay)
+
+                                                    // transmit the repeat pattern
+                                                    supIRViewModel.transmitter.transmitMicrosecondIntArray(
+                                                        38000,
+                                                        necRepeatPattern
+                                                    )
+                                                    transmissionLength =
+                                                        necRepeatPattern.sum().toDuration(DurationUnit.MICROSECONDS)
+                                                }
+                                            }
+                                        }
+
+                                        tryAwaitRelease()
+
+                                        retransmissionJob.cancel()
+                                    }
+                                )
+                            }
+                        }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(230.dp)
+                            .background(MaterialTheme.colorScheme.secondary),
+                    ) {
+                        Text(
+                            modifier = Modifier.align(Alignment.Center),
+                            text = function.functionName.ifEmpty { "Command" },
+                            color = MaterialTheme.colorScheme.onSecondary
+                        )
                     }
                 }
             }
