@@ -8,18 +8,11 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
-
 import com.obd.infrared.transmit.TransmitInfo;
 import com.obd.infrared.transmit.Transmitter;
 import com.obd.infrared.transmit.TransmitterType;
 import com.obd.infrared.utils.Constants;
-import com.obd.infrared.utils.le.Device;
 import com.obd.infrared.utils.le.IControl;
-import com.obd.infrared.utils.le.IRAction;
-import com.obd.infrared.utils.le.IRFunction;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class LeTransmitter extends Transmitter {
 

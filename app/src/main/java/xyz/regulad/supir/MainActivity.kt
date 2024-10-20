@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import xyz.regulad.supir.ir.loadAllBrands
 import xyz.regulad.supir.ui.nav.SupIRNavHost
 import xyz.regulad.supir.ui.theme.SupIRTheme
 

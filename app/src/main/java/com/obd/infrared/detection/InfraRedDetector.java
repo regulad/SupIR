@@ -3,7 +3,6 @@ package com.obd.infrared.detection;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-
 import android.util.Log;
 import androidx.annotation.Nullable;
 import com.obd.infrared.detection.concrete.ActualDetector;

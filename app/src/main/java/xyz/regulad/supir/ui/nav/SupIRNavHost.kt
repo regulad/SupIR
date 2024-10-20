@@ -8,15 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,7 +25,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import xyz.regulad.regulib.compose.firstState
 import xyz.regulad.regulib.compose.produceState
@@ -43,7 +38,7 @@ import kotlin.time.toDuration
 @Composable
 fun FullscreenLoader() {
     // centrally placed spinny
-    Box (
+    Box(
         modifier = Modifier.fillMaxSize(),
     ) {
         CircularProgressIndicator(
@@ -72,7 +67,12 @@ data class CategoryRoute(val brandName: String, val categoryName: String)
 data class ModelRoute(val brandName: String, val categoryName: String, val modelIdentifier: String)
 
 @Serializable
-data class FunctionRoute(val brandName: String, val categoryName: String, val modelIdentifier: String, val functionIdentifier: String)
+data class FunctionRoute(
+    val brandName: String,
+    val categoryName: String,
+    val modelIdentifier: String,
+    val functionIdentifier: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,9 +86,21 @@ fun SupIRNavHost(
         value = supIRViewModel.allBrands // this is a lazy value that will be loaded when first accessed
     }
 
-    NavHost(navController = navController, startDestination = if (supIRViewModel.transmitter != null) MainRoute else UnsupportedRoute, modifier = modifier) {
+    NavHost(
+        navController = navController,
+        startDestination = if (supIRViewModel.transmitter != null) MainRoute else UnsupportedRoute,
+        modifier = modifier
+    ) {
         composable<UnsupportedRoute> {
-            Text("Your device does not support IR transmission. Sorry.")
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center)
+                ) {
+                    Text("Sorry, but your device does not support IR transmission.")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("This app requires an IR blaster to work.")
+                }
+            }
         }
         composable<MainRoute> {
             fun navigateToBrand(brand: SBrand) {
@@ -319,11 +331,13 @@ fun SupIRNavHost(
             val category = brand?.categories?.find { it.name == categoryRoute.categoryName }
 
             fun navigateToModel(model: SModel) {
-                navController.navigate(route = ModelRoute(
-                    brandName = brand!!.name,
-                    categoryName = category!!.name,
-                    modelIdentifier = model.identifier
-                ))
+                navController.navigate(
+                    route = ModelRoute(
+                        brandName = brand!!.name,
+                        categoryName = category!!.name,
+                        modelIdentifier = model.identifier
+                    )
+                )
             }
 
             LaunchedEffect(brand, category) {
@@ -339,7 +353,7 @@ fun SupIRNavHost(
                     state = lazyColumnState
                 ) {
                     items(category.models) { model ->
-                        Surface (onClick = {
+                        Surface(onClick = {
                             navigateToModel(model)
                         }) {
                             Column {
@@ -452,7 +466,9 @@ fun SupIRNavHost(
                                         val retransmissionJob = transmissionScope.launch {
                                             var transmissionLength = function.transmissionLengthDuration(context)
 
-                                            val isNecFamilyFunction = function.protocol.uppercase().startsWith("NEC")
+                                            val isNecFamilyFunction = function.protocol
+                                                .uppercase()
+                                                .startsWith("NEC")
                                             if (isNecFamilyFunction) {
                                                 // this is an NEC family function, they have a special repeat function
                                                 while (isActive) {
@@ -466,7 +482,9 @@ fun SupIRNavHost(
                                                         necRepeatPattern
                                                     )
                                                     transmissionLength =
-                                                        necRepeatPattern.sum().toDuration(DurationUnit.MICROSECONDS)
+                                                        necRepeatPattern
+                                                            .sum()
+                                                            .toDuration(DurationUnit.MICROSECONDS)
                                                 }
                                             }
                                         }
@@ -486,7 +504,9 @@ fun SupIRNavHost(
                     ) {
                         Icon(
                             imageVector = function.icon,
-                            modifier = Modifier.align(Alignment.Center).size(120.dp),
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(120.dp),
                             contentDescription = function.functionName.ifEmpty { "Command" },
                             tint = MaterialTheme.colorScheme.onSecondary
                         )

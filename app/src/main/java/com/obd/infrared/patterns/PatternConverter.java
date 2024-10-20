@@ -16,7 +16,9 @@ public class PatternConverter {
         return this.frequency;
     }
 
-    /** Convert and return data in @newPatternType */
+    /**
+     * Convert and return data in @newPatternType
+     */
     public int[] convertDataTo(PatternType newPatternType) {
         if (newPatternType == type) {
             return data;

@@ -21,9 +21,10 @@ data class IRDBFunction(
     val subdevice: Int,
     val function: Int,
 ) {
-    val identifier: String get() {
-        return "'$functionName','$protocol','$device','$subdevice','$function'"
-    }
+    val identifier: String
+        get() {
+            return "'$functionName','$protocol','$device','$subdevice','$function'"
+        }
 
     val icon: ImageVector
         get() {

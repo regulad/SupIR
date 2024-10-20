@@ -4,7 +4,6 @@ import android.annotation.TargetApi;
 import android.hardware.ConsumerIrManager;
 import android.os.Build;
 import android.util.Log;
-
 import com.obd.infrared.detection.Detector;
 import com.obd.infrared.detection.InfraRedDetector;
 import com.obd.infrared.transmit.TransmitInfo;

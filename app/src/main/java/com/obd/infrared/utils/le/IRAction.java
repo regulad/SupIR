@@ -3,8 +3,6 @@ package com.obd.infrared.utils.le;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.obd.infrared.transmit.concrete.LeTransmitter;
-
 public class IRAction implements Parcelable {
     public static final Creator<IRAction> CREATOR = new C07691();
     public int DeviceId;

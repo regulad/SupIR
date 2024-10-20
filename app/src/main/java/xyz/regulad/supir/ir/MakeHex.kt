@@ -92,8 +92,13 @@ class IRP(
                 val value = parseVal(line.substringAfter("="))
                 messageTime = if (value.bits == 0) value.value * timeBase else value.value
             }
+
             line[0] in '0'..'9' && line[1] == '=' -> setDigit(line[0] - '0', line.substring(2))
-            line.startsWith("1") && line[1] in '0'..'5' && line[2] == '=' -> setDigit(line[1] - '0' + 10, line.substring(3))
+            line.startsWith("1") && line[1] in '0'..'5' && line[2] == '=' -> setDigit(
+                line[1] - '0' + 10,
+                line.substring(3)
+            )
+
             line.startsWith("ZERO=") -> setDigit(0, line.substringAfter("="))
             line.startsWith("ONE=") -> setDigit(1, line.substringAfter("="))
             line.startsWith("TWO=") -> setDigit(2, line.substringAfter("="))
@@ -104,7 +109,10 @@ class IRP(
             line.startsWith("R-SUFFIX=") -> rSuffix = line.substringAfter("=")
             line.startsWith("FIRSTBIT=MSB") -> msb = true
             line.startsWith("FORM=") -> form = line.substringAfter("=")
-            line.startsWith("DEFINE") || line.startsWith("DEFAULT") -> handleDefine(line.substringAfter("DEFINE").substringAfter("DEFAULT"))
+            line.startsWith("DEFINE") || line.startsWith("DEFAULT") -> handleDefine(
+                line.substringAfter("DEFINE").substringAfter("DEFAULT")
+            )
+
             line.startsWith("DEVICE=") -> getPair(config.device, line.substringAfter("="))
             line.startsWith("FUNCTION=") -> handleFunction(line.substringAfter("="))
         }
@@ -140,16 +148,19 @@ class IRP(
                 i++
                 config.def[ndx]?.let { result = parseVal(it) } ?: run { result.value = config.value[ndx].toDouble() }
             }
+
             input[i] in '0'..'9' -> {
                 result.value = input.substring(i).takeWhile { it.isDigit() }.toDouble()
                 i += result.value.toString().length
             }
+
             input[i] == '-' -> {
                 i++
                 val temp = parseVal(input.substring(i), Precedence.UNARY)
                 result.value = -temp.value
                 result.bits = if (temp.bits > 0) 0 else temp.bits
             }
+
             input[i] == '~' -> {
                 i++
                 val temp = parseVal(input.substring(i), Precedence.UNARY)
@@ -159,6 +170,7 @@ class IRP(
                     result.bits = temp.bits
                 }
             }
+
             input[i] == '(' -> {
                 val closingIndex = input.indexOf(')', i)
                 if (closingIndex == -1) throw IllegalArgumentException("Mismatched parentheses")
@@ -173,6 +185,7 @@ class IRP(
                 result.bits = -1
                 i++
             }
+
             i < input.length && input[i] == 'U' -> {
                 result.bits = -1
                 i++
@@ -187,6 +200,7 @@ class IRP(
                     result.value *= temp.value
                     if (result.bits > 0) result.bits = 0
                 }
+
                 prec.ordinal < Precedence.PLUS.ordinal && input[i] in setOf('+', '-', '^') -> {
                     val op = input[i]
                     i++
@@ -203,6 +217,7 @@ class IRP(
                     }
                     if (result.bits > 0) result.bits = 0
                 }
+
                 prec.ordinal < Precedence.COLON.ordinal && input[i] == ':' -> {
                     i++
                     val temp = parseVal(input.substring(i), Precedence.COLON)
@@ -218,6 +233,7 @@ class IRP(
                     }
                     result.value = (result.value.toInt() and config.mask[result.bits]).toDouble()
                 }
+
                 else -> break
             }
         }
@@ -259,6 +275,7 @@ class IRP(
                     cumulative += newCumulative
                     i++
                 }
+
                 '_' -> {
                     val (newHex, newCumulative) = genHex(if (hex.isNotEmpty() && rSuffix != null) rSuffix!! else suffix!!)
                     hex.addAll(newHex)
@@ -268,6 +285,7 @@ class IRP(
                         addToHex(cumulative - messageTime)
                     }
                 }
+
                 '^' -> {
                     i++
                     val value = parseVal(pattern.substring(i))
@@ -277,6 +295,7 @@ class IRP(
                     }
                     i = pattern.indexOfAny(charArrayOf(',', ';'), i).takeIf { it != -1 } ?: pattern.length
                 }
+
                 else -> {
                     val value = parseVal(pattern.substring(i))
                     if (value.bits == 0) value.value *= timeBase
@@ -414,7 +433,8 @@ object IrEncoder {
     }
 
     fun String.frequency(): Double {
-        return this.split(" ").filter { it.isNotEmpty() }.filter { it.uppercase().startsWith("FREQUENCY=") }.map { it.substringAfter("=").toDouble() }.firstOrNull() ?: 38400.0
+        return this.split(" ").filter { it.isNotEmpty() }.filter { it.uppercase().startsWith("FREQUENCY=") }
+            .map { it.substringAfter("=").toDouble() }.firstOrNull() ?: 38400.0
     }
 
     /**

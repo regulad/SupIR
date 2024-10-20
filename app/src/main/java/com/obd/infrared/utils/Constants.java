@@ -11,6 +11,6 @@ public class Constants {
     /**
      * Remote SDC don't have normal way to send signal,
      * so using big enough number for duration of ir functions
-     * */
+     */
     public static final int DEFAULT_IR_FUNCTION_DURATION_MS = 500;
 }

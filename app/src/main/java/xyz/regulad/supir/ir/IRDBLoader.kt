@@ -1,7 +1,6 @@
 package xyz.regulad.supir.ir
 
 import android.content.Context
-import android.content.res.AssetManager
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -36,7 +35,12 @@ private data class Brand(private val context: Context, val name: String, private
 @Serializable
 data class SCategory(val name: String, val models: List<SModel>)
 
-private data class Category(private val context: Context, private val brandName: String, val name: String, private val indexEntries: List<IndexEntry>) {
+private data class Category(
+    private val context: Context,
+    private val brandName: String,
+    val name: String,
+    private val indexEntries: List<IndexEntry>
+) {
     val models by lazy {
         indexEntries
             .map { Model(context, brandName, name, it.fileName) }
@@ -53,7 +57,12 @@ private data class Category(private val context: Context, private val brandName:
 @Serializable
 data class SModel(val identifier: String, val functions: List<IRDBFunction>)
 
-private data class Model(private val context: Context, private val brandName: String, val category: String, val identifier: String) {
+private data class Model(
+    private val context: Context,
+    private val brandName: String,
+    val category: String,
+    val identifier: String
+) {
     val sModel by lazy {
         SModel(identifier, functions)
     }

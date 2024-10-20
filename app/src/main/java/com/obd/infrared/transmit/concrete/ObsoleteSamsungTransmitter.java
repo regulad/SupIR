@@ -2,7 +2,6 @@ package com.obd.infrared.transmit.concrete;
 
 import android.content.Context;
 import android.util.Log;
-
 import com.obd.infrared.transmit.TransmitInfo;
 import com.obd.infrared.transmit.Transmitter;
 import com.obd.infrared.transmit.TransmitterType;

@@ -69,7 +69,8 @@ suspend fun Transmitter.transmitMicrosecondIntArray(frequency: Int, pattern: Int
 suspend fun IRDBFunction.transmit(context: Context, transmitter: Transmitter) {
     // we need to create the battery
 
-    val (frequency, timingString) = timingString(context) ?: throw UnsupportedOperationException("Failed to get timing string for $protocol")
+    val (frequency, timingString) = timingString(context)
+        ?: throw UnsupportedOperationException("Failed to get timing string for $protocol")
 
     Log.d("IRDBFunction", "$protocol $device $subdevice $function -> ${timingString.joinToString(" ")}")
 

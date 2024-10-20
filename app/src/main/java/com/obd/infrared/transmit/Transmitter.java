@@ -1,7 +1,6 @@
 package com.obd.infrared.transmit;
 
 import android.content.Context;
-
 import android.util.Log;
 import androidx.annotation.Nullable;
 import com.obd.infrared.detection.InfraRedDetector;

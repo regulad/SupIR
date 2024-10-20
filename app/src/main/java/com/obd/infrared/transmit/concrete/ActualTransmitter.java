@@ -5,7 +5,6 @@ import android.content.Context;
 import android.hardware.ConsumerIrManager;
 import android.os.Build;
 import android.util.Log;
-
 import com.obd.infrared.transmit.TransmitInfo;
 import com.obd.infrared.transmit.Transmitter;
 import com.obd.infrared.transmit.TransmitterType;

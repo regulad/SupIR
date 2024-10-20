@@ -1,7 +1,5 @@
 package com.obd.infrared.patterns;
 
-import android.os.Build;
-
 import androidx.annotation.Nullable;
 import com.obd.infrared.transmit.TransmitterType;
 
