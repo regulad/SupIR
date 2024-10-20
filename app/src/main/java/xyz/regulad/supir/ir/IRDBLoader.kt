@@ -7,15 +7,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.serialization.Serializable
+import xyz.regulad.regulib.FlowCache.Companion.asCached
 import xyz.regulad.supir.ir.TransmitterManager.isTransmittable
-import xyz.regulad.supir.util.FlowCache.cached
 import java.io.InputStream
 
 private const val TAG = "IRDBLoader"
 
-data class IndexEntry(val brandName: String, val modelCategory: String, val fileName: String)
+private data class IndexEntry(val brandName: String, val modelCategory: String, val fileName: String)
 
-data class Brand(private val context: Context, val name: String, private val indexEntries: List<IndexEntry>) {
+@Serializable
+data class SBrand(val name: String, val categories: List<SCategory>)
+
+private data class Brand(private val context: Context, val name: String, private val indexEntries: List<IndexEntry>) {
     val categories by lazy {
         indexEntries
             .groupBy { it.modelCategory }
@@ -23,18 +27,37 @@ data class Brand(private val context: Context, val name: String, private val ind
             .filter { it.models.any() }
             .sortedBy { it.name }
     }
+
+    val sBrand by lazy {
+        SBrand(name, categories.map { it.sCategory })
+    }
 }
 
-data class Category(private val context: Context, private val brandName: String, val name: String, private val indexEntries: List<IndexEntry>) {
+@Serializable
+data class SCategory(val name: String, val models: List<SModel>)
+
+private data class Category(private val context: Context, private val brandName: String, val name: String, private val indexEntries: List<IndexEntry>) {
     val models by lazy {
         indexEntries
             .map { Model(context, brandName, name, it.fileName) }
             .filter { it.functions.any() }
             .sortedBy { it.identifier }
     }
+
+    val sCategory by lazy {
+        SCategory(name, models.map { it.sModel })
+    }
 }
 
-data class Model(private val context: Context, private val brandName: String, val category: String, val identifier: String) {
+
+@Serializable
+data class SModel(val identifier: String, val functions: List<IRDBFunction>)
+
+private data class Model(private val context: Context, private val brandName: String, val category: String, val identifier: String) {
+    val sModel by lazy {
+        SModel(identifier, functions)
+    }
+
     companion object {
         private val functionMap = mutableMapOf<Triple<String, String, String>, List<IRDBFunction>>()
     }
@@ -80,7 +103,7 @@ data class Model(private val context: Context, private val brandName: String, va
     }
 }
 
-fun loadAllBrands(context: Context): Flow<Brand> {
+internal fun loadAllBrands(context: Context): Flow<SBrand> {
     Log.d(TAG, "Loading IRDB Index")
 
     return context.assets.open("codes/index")
@@ -96,7 +119,8 @@ fun loadAllBrands(context: Context): Flow<Brand> {
         .sortedBy { it.key } // from here on, do things on demand
         .map { (brandName, entries) -> Brand(context, brandName, entries) }
         .filter { it.categories.any() }
+        .map { it.sBrand }
         .asFlow()
         .flowOn(Dispatchers.IO)
-        .cached()
+        .asCached(context)
 }

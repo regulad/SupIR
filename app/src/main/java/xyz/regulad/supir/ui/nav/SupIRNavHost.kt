@@ -3,33 +3,40 @@ package xyz.regulad.supir.ui.nav
 import android.content.Context
 import android.os.Vibrator
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
+import xyz.regulad.regulib.compose.firstState
+import xyz.regulad.regulib.compose.produceState
+import xyz.regulad.regulib.showToast
 import xyz.regulad.supir.SupIRViewModel
 import xyz.regulad.supir.ir.*
 import xyz.regulad.supir.ir.IrEncoder.transmissionLengthDuration
-import xyz.regulad.supir.ui.components.FlowLazyColumn
-import xyz.regulad.supir.util.FlowCache.cachedCollectUntil
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -55,8 +62,6 @@ data object MainRoute
 @Serializable
 data object UnsupportedRoute
 
-// i give up on trying to intermingle the serializable classes with the parcelable classes. it just doesn't work
-
 @Serializable
 data class BrandRoute(val brandName: String)
 
@@ -69,20 +74,24 @@ data class ModelRoute(val brandName: String, val categoryName: String, val model
 @Serializable
 data class FunctionRoute(val brandName: String, val categoryName: String, val modelIdentifier: String, val functionIdentifier: String)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SupIRNavHost(
     modifier: Modifier = Modifier,
+    navController: NavHostController,
     supIRViewModel: SupIRViewModel,
-    allBrandsFlow: Flow<Brand>
+    setTopBarTitle: (String) -> Unit
 ) {
-    val navController = rememberNavController()
+    val allBrandsFlow by produceState<Flow<SBrand>?>(null) {
+        value = supIRViewModel.allBrands // this is a lazy value that will be loaded when first accessed
+    }
 
     NavHost(navController = navController, startDestination = if (supIRViewModel.transmitter != null) MainRoute else UnsupportedRoute, modifier = modifier) {
         composable<UnsupportedRoute> {
             Text("Your device does not support IR transmission. Sorry.")
         }
         composable<MainRoute> {
-            fun navigateToBrand(brand: Brand) {
+            fun navigateToBrand(brand: SBrand) {
                 if (brand.categories.size > 1) {
                     navController.navigate(
                         route = BrandRoute(
@@ -107,30 +116,147 @@ fun SupIRNavHost(
                 }
             }
 
-            Column (modifier = Modifier.fillMaxSize()) {
-                Column {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Select the brand of the device you want to control")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider()
-                }
+            LaunchedEffect(Unit) {
+                setTopBarTitle("Select brand")
+            }
 
-                FlowLazyColumn(
-                    flow = allBrandsFlow,
-                    modifier = Modifier.fillMaxSize(),
-                    loadingContent = { FullscreenLoader() }
-                ) { brand ->
-                    Surface (onClick = {
-                        navigateToBrand(brand)
-                    }) {
-                        Column {
-                            Spacer(modifier = Modifier.height(8.dp))
+            if (allBrandsFlow == null) {
+                FullscreenLoader()
+            } else {
+                val (items, flowFinished) = allBrandsFlow!!.produceState()
+                val lazyColumnState = rememberLazyListState()
 
-                            Text(brand.name)
+                if (items.isEmpty()) {
+                    FullscreenLoader()
+                } else {
+                    var expanded by remember { mutableStateOf(false) }
+                    var query by remember { mutableStateOf("") }
+                    val filteredItems = items.filter { it.name.contains(query, ignoreCase = true) }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                    val context = LocalContext.current
 
-                            HorizontalDivider()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        SearchBar(
+                            modifier = Modifier.fillMaxWidth(),
+                            inputField = {
+                                SearchBarDefaults.InputField(
+                                    expanded = expanded,
+                                    placeholder = { Text("Search brands") },
+                                    onExpandedChange = {
+                                        expanded = it
+                                        if (!it) {
+                                            query = ""
+                                        }
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                    query = query,
+                                    onQueryChange = { query = it },
+                                    onSearch = {
+                                        expanded = false
+
+                                        if (filteredItems.size == 1) {
+                                            navigateToBrand(filteredItems.first())
+                                        } else if (filteredItems.isEmpty()) {
+                                            context.showToast("No brand found matching \"$query\"")
+                                        } else {
+                                            context.showToast("Multiple brands found matching \"$query\", select one below.")
+                                        }
+                                    }
+                                )
+                            },
+                            expanded = expanded,
+                            onExpandedChange = {
+                                expanded = it
+                                if (!it) {
+                                    query = ""
+                                }
+                            },
+                        ) {
+                            val previewLazyColumnState = rememberLazyListState()
+
+                            LazyColumn(
+                                state = previewLazyColumnState
+                            ) {
+                                items(filteredItems) { brand ->
+                                    Surface(onClick = {
+                                        navigateToBrand(brand)
+                                    }) {
+                                        Column {
+                                            ListItem(
+                                                headlineContent = { Text(brand.name) }
+                                            )
+                                            HorizontalDivider()
+                                        }
+                                    }
+                                }
+
+                                if (!flowFinished) {
+                                    item {
+                                        Column(
+                                            modifier = Modifier.fillMaxWidth(),
+                                        ) {
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            CircularProgressIndicator(
+                                                modifier = Modifier
+                                                    .width(64.dp)
+                                                    .height(64.dp)
+                                                    .align(Alignment.CenterHorizontally),
+                                            )
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                        }
+                                    }
+                                } else {
+                                    if (filteredItems.isEmpty()) {
+                                        item {
+                                            Column(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Spacer(modifier = Modifier.height(16.dp))
+                                                Text("No brands found matching \"$query\"")
+                                                Spacer(modifier = Modifier.height(16.dp))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        LazyColumn(state = lazyColumnState) {
+                            items(items) { brand ->
+                                Surface(onClick = {
+                                    navigateToBrand(brand)
+                                }) {
+                                    Column {
+                                        ListItem(
+                                            headlineContent = { Text(brand.name) }
+                                        )
+                                        HorizontalDivider()
+                                    }
+                                }
+                            }
+
+                            if (!flowFinished) {
+                                item {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        CircularProgressIndicator(
+                                            modifier = Modifier
+                                                .width(64.dp)
+                                                .height(64.dp)
+                                                .align(Alignment.CenterHorizontally),
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -139,11 +265,11 @@ fun SupIRNavHost(
         composable<BrandRoute> { backStackEntry ->
             val brandRoute: BrandRoute = backStackEntry.toRoute()
 
-            val brand by produceState<Brand?>(null) {
-                value = allBrandsFlow.cachedCollectUntil { it.name == brandRoute.brandName }!!
+            val brand by produceState<SBrand?>(null, allBrandsFlow) {
+                value = allBrandsFlow?.first { it.name == brandRoute.brandName }
             }
 
-            fun navigateToCategory(category: Category) {
+            fun navigateToCategory(category: SCategory) {
                 if (category.models.size > 1) {
                     navController.navigate(
                         route = CategoryRoute(
@@ -162,33 +288,25 @@ fun SupIRNavHost(
                 }
             }
 
-            if (brand == null) {
-                FullscreenLoader()
-                return@composable
+            LaunchedEffect(brand) {
+                setTopBarTitle("Select category of ${brand?.name ?: "brand"} device")
             }
 
-            Column {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Select the category of the device from ${brand!!.name} you want to control")
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider()
-
+            if (brand == null) {
+                FullscreenLoader()
+            } else {
                 val lazyColumnState = rememberLazyListState()
-
                 LazyColumn(
                     state = lazyColumnState
                 ) {
                     items(brand!!.categories) { category ->
-                        Surface (onClick = {
+                        Surface(onClick = {
                             navigateToCategory(category)
                         }) {
                             Column {
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(category.name)
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
+                                ListItem(
+                                    headlineContent = { Text(category.name) }
+                                )
                                 HorizontalDivider()
                             }
                         }
@@ -199,12 +317,10 @@ fun SupIRNavHost(
         composable<CategoryRoute> { backStackEntry ->
             val categoryRoute: CategoryRoute = backStackEntry.toRoute()
 
-            val brand by produceState<Brand?>(null) {
-                value = allBrandsFlow.cachedCollectUntil { it.name == categoryRoute.brandName }!!
-            }
+            val brand = allBrandsFlow?.firstState { it.name == categoryRoute.brandName }
             val category = brand?.categories?.find { it.name == categoryRoute.categoryName }
 
-            fun navigateToModel(model: Model) {
+            fun navigateToModel(model: SModel) {
                 navController.navigate(route = ModelRoute(
                     brandName = brand!!.name,
                     categoryName = category!!.name,
@@ -212,19 +328,13 @@ fun SupIRNavHost(
                 ))
             }
 
-            if (category == null) {
-                FullscreenLoader()
-                return@composable
+            LaunchedEffect(brand, category) {
+                setTopBarTitle("Select model of ${category?.name ?: "device"}.")
             }
 
-            Column {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Select the model of the ${category.name} from ${brand!!.name} you want to control.")
-                Spacer(modifier = Modifier.height(4.dp))
-                Text("You may need to find the right model ID through trial-and-error.")
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider()
-
+            if (category == null) {
+                FullscreenLoader()
+            } else {
                 val lazyColumnState = rememberLazyListState()
 
                 LazyColumn(
@@ -235,12 +345,9 @@ fun SupIRNavHost(
                             navigateToModel(model)
                         }) {
                             Column {
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(model.identifier)
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
+                                ListItem(
+                                    headlineContent = { Text(model.identifier) }
+                                )
                                 HorizontalDivider()
                             }
                         }
@@ -251,36 +358,28 @@ fun SupIRNavHost(
         composable<ModelRoute> { backStackEntry ->
             val modelRoute: ModelRoute = backStackEntry.toRoute()
 
-            val brand by produceState<Brand?>(null) {
-                value = allBrandsFlow.cachedCollectUntil { it.name == modelRoute.brandName }!!
-            }
+            val brand = allBrandsFlow?.firstState { it.name == modelRoute.brandName }
             val category = brand?.categories?.find { it.name == modelRoute.categoryName }
             val model = category?.models?.find { it.identifier == modelRoute.modelIdentifier }
-
-            if (model == null) {
-                FullscreenLoader()
-                return@composable
-            }
 
             fun navigateToFunction(function: IRDBFunction) {
                 navController.navigate(
                     FunctionRoute(
                         brand!!.name,
-                        category.name,
-                        model.identifier,
+                        category!!.name,
+                        model!!.identifier,
                         function.identifier
                     )
                 )
             }
 
-            Column {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Select the command you want to send to your ${brand!!.name} ${category.name}.")
-                Spacer(modifier = Modifier.height(4.dp))
-                Text("Model selected: ${model.identifier}")
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider()
+            LaunchedEffect(brand, category, model) {
+                setTopBarTitle("Select command")
+            }
 
+            if (model == null) {
+                FullscreenLoader()
+            } else {
                 val lazyColumnState = rememberLazyListState()
 
                 LazyColumn(
@@ -293,12 +392,7 @@ fun SupIRNavHost(
                             }
                         ) {
                             Column {
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(function.functionName)
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
+                                function.asListItem()
                                 HorizontalDivider()
                             }
                         }
@@ -309,9 +403,7 @@ fun SupIRNavHost(
         composable<FunctionRoute> { backStackEntry ->
             val functionRoute: FunctionRoute = backStackEntry.toRoute()
 
-            val brand by produceState<Brand?>(null) {
-                value = allBrandsFlow.cachedCollectUntil { it.name == functionRoute.brandName }!!
-            }
+            val brand = allBrandsFlow?.firstState { it.name == functionRoute.brandName }
             val category = brand?.categories?.find { it.name == functionRoute.categoryName }
             val model = category?.models?.find { it.identifier == functionRoute.modelIdentifier }
             val function = model?.functions?.find { it.identifier == functionRoute.functionIdentifier }
@@ -319,6 +411,10 @@ fun SupIRNavHost(
             if (function == null) {
                 FullscreenLoader()
                 return@composable
+            }
+
+            LaunchedEffect(function, brand, category) {
+                setTopBarTitle("Press/hold to send ${function.functionName}")
             }
 
             val context = LocalContext.current
@@ -390,10 +486,11 @@ fun SupIRNavHost(
                             .size(230.dp)
                             .background(MaterialTheme.colorScheme.secondary),
                     ) {
-                        Text(
-                            modifier = Modifier.align(Alignment.Center),
-                            text = function.functionName.ifEmpty { "Command" },
-                            color = MaterialTheme.colorScheme.onSecondary
+                        Icon(
+                            imageVector = function.icon,
+                            modifier = Modifier.align(Alignment.Center).size(120.dp),
+                            contentDescription = function.functionName.ifEmpty { "Command" },
+                            tint = MaterialTheme.colorScheme.onSecondary
                         )
                     }
                 }
