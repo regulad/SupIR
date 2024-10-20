@@ -20,11 +20,7 @@ This project was born when one of my friends in Econ asked if I could turn off t
 
 ## Licenses
 
-SupIR is licensed under the GPLv3. Non-libre licenses of its dependencies are listed below.
-
-### AndroidInfraRed
-
-https://github.com/OneButtonDeveloper/AndroidInfraRed
+SupIR is licensed under the GPLv3. Non-GPL compatible licenses of its dependencies are listed below.
 
 ### irdb
 
