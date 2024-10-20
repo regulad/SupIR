@@ -12,6 +12,10 @@ SupIR is an open-source general-purpose IR blaster for Android using the [irdb](
 
 SupIR requires an Android phone with an IR blaster. If your phone does not have an IR blaster, unfortunately, you are out of luck. Consider finding a device like a Samsung Galaxy S4/S5 and bringing it up to date with LineageOS.
 
+## Downloading
+
+Releases are available from GitHub Releases.
+
 ## 2024-2025 Weekend Project #1
 
 Hi, I'm Parker, and I'm a senior in High School. This year, I'm going to be making a project once every couple of weekends to keep my skills sharp and to learn new things. I'm going to be documenting my progress on this GitHub page, so I hope you stick around to see what I make!
@@ -80,3 +84,12 @@ modify or distribute this program.
 CC0 License
 
 Attribution: https://www.svgrepo.com/svg/259010/diode-led
+
+## Automatic Releasing
+
+If you choose to fork this repository and wish to enable automatic releasing, you will need to set up the following secrets:
+
+* `KEYSTORE_FILE`: The Base64-encoded keystore file
+* `KEYSTORE_PASSWORD`: The keystore password
+* `KEY_ALIAS`: The key alias
+* `KEY_PASSWORD`: The key password

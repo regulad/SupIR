@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.TRANSMIT_IR" android:required="false" />
+    <uses-permission android:name="android.permission.TRANSMIT_IR" android:required="true" />
     <uses-permission android:name="com.sony.remotecontrol.permission.API"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
 
-    <uses-feature android:name="android.hardware.consumerir" android:required="false"/>
+    <uses-feature android:name="android.hardware.consumerir" android:required="true"/>
 
     <application
             android:allowBackup="true"
