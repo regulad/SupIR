@@ -1,4 +1,4 @@
-# SupIR
+# ![SupIR Icon](app/src/main/res/mipmap-mdpi/ic_launcher.webp) SupIR
 
 SupIR is an open-source general-purpose IR blaster for Android using the [irdb](https://github.com/probonopd/irdb) database. Inspired by the now-abandoned [AndroidInfraRed](https://github.com/OneButtonDeveloper/AndroidInfraRed), SupIR puts the power of a Universal Remote or a Flipper Zero in your pocket.
 
@@ -78,3 +78,9 @@ this program for any purpose.
 
 If you do not agree to these conditions, you have no permission to use, copy,
 modify or distribute this program.
+
+### IR Icon
+
+CC0 License
+
+Attribution: https://www.svgrepo.com/svg/259010/diode-led
