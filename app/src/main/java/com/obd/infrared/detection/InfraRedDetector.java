@@ -9,7 +9,6 @@ import androidx.annotation.Nullable;
 import com.obd.infrared.detection.concrete.ActualDetector;
 import com.obd.infrared.detection.concrete.HtcDetector;
 import com.obd.infrared.detection.concrete.LeDetector;
-import com.obd.infrared.detection.concrete.LgDetector;
 import com.obd.infrared.detection.concrete.ObsoleteSamsungDetector;
 import com.obd.infrared.transmit.TransmitterType;
 
@@ -48,7 +47,6 @@ public class InfraRedDetector {
         this.detectorUtils = new DetectorUtils(context);
 
         this.detectors.add(new ActualDetector());
-        this.detectors.add(new LgDetector());
         this.detectors.add(new HtcDetector());
         this.detectors.add(new LeDetector());
         this.detectors.add(new ObsoleteSamsungDetector());

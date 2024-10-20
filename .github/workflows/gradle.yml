@@ -1,0 +1,47 @@
+name: "Gradle Tasks"
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  tags:
+    - "v*.*.*"
+  schedule:
+    # ensures that workflow runs AT LEAST every 60 days to keep artifacts downloadable
+    - cron: "0 3 15 */2 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # - setup java
+    # - setup gradle cache
+    # - setup android sdk
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+          # we don't need to declare any additional cache paths, the cache already catches everything
+      - uses: android-actions/setup-android@v3
+      - run: "chmod +x ./gradlew"  # this project is used from windows, so it can be messed up
+      - run: "./gradlew build --no-daemon"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "gradle-artifacts"
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+      - if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/release/app-release-unsigned.apk

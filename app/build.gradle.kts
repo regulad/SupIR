@@ -24,7 +24,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -71,7 +71,4 @@ dependencies {
     implementation(libs.regulib.compose)
 
     implementation(libs.androidx.material.icons.extended)
-
-    // HTC & LG support
-    compileOnly(files("./lib/HTCIR.jar", "./lib/QRemoteSDK.jar"))
 }

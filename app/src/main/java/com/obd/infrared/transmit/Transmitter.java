@@ -6,10 +6,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import com.obd.infrared.detection.InfraRedDetector;
 import com.obd.infrared.transmit.concrete.ActualTransmitter;
-import com.obd.infrared.transmit.concrete.HtcTransmitter;
 import com.obd.infrared.transmit.concrete.LeTransmitter;
-import com.obd.infrared.transmit.concrete.LgWithDeviceTransmitter;
-import com.obd.infrared.transmit.concrete.LgWithoutDeviceTransmitter;
 import com.obd.infrared.transmit.concrete.ObsoleteSamsungTransmitter;
 
 public abstract class Transmitter {
@@ -29,14 +26,8 @@ public abstract class Transmitter {
                 return new ActualTransmitter(context);
             case OBSOLETE_SAMSUNG:
                 return new ObsoleteSamsungTransmitter(context);
-            case HTC:
-                return new HtcTransmitter(context);
-            case LG:
-                return new LgWithDeviceTransmitter(context);
             case LE_COOLPAD:
                 return new LeTransmitter(context);
-            case LG_WITHOUT_DEVICE:
-                return new LgWithoutDeviceTransmitter(context);
             default:
                 return null;
         }

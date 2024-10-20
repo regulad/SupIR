@@ -265,9 +265,7 @@ fun SupIRNavHost(
         composable<BrandRoute> { backStackEntry ->
             val brandRoute: BrandRoute = backStackEntry.toRoute()
 
-            val brand by produceState<SBrand?>(null, allBrandsFlow) {
-                value = allBrandsFlow?.first { it.name == brandRoute.brandName }
-            }
+            val brand = allBrandsFlow?.firstState { it.name == brandRoute.brandName }
 
             fun navigateToCategory(category: SCategory) {
                 if (category.models.size > 1) {
@@ -299,7 +297,7 @@ fun SupIRNavHost(
                 LazyColumn(
                     state = lazyColumnState
                 ) {
-                    items(brand!!.categories) { category ->
+                    items(brand.categories) { category ->
                         Surface(onClick = {
                             navigateToCategory(category)
                         }) {
