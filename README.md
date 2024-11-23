@@ -17,6 +17,14 @@ puts the power of a Universal Remote or a Flipper Zero in your pocket.
 SupIR requires an Android phone with an IR blaster. If your phone does not have an IR blaster, unfortunately, you are
 out of luck. Consider finding a device like a Samsung Galaxy S4/S5 and bringing it up to date with LineageOS.
 
+## Features
+
+* Control your TV, soundbar, projector, and more
+* Largest IR database on the internet
+* Save your favorite devices for quick access
+* Super fast load times, app sized <50MB
+* Totally open-source
+
 ## Downloading
 
 Signed releases are available from GitHub Releases.
