@@ -4,3 +4,6 @@
 [submodule "MakeHex"]
 	path = MakeHex
 	url = https://github.com/probonopd/MakeHex.git
+[submodule "flipper"]
+	path = flipper
+	url = https://github.com/Lucaslhm/Flipper-IRDB
