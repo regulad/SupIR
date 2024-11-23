@@ -1,4 +1,4 @@
-package xyz.regulad.supir.ir
+package xyz.regulad.supir.irdb
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons

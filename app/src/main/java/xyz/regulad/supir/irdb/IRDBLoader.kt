@@ -1,6 +1,7 @@
-package xyz.regulad.supir.ir
+package xyz.regulad.supir.irdb
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -8,7 +9,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.Serializable
 import xyz.regulad.regulib.FlowCache.Companion.asCached
-import xyz.regulad.supir.ir.TransmitterManager.isTransmittable
+import xyz.regulad.supir.irdb.TransmitterManager.isTransmittable
 import java.io.InputStream
 
 private const val TAG = "IRDBLoader"
@@ -115,6 +116,8 @@ private data class Model(
 internal fun loadAllBrands(context: Context): Flow<SBrand> {
     Log.d(TAG, "Loading IRDB Index")
 
+    val versionNumber = context.packageManager.getPackageInfo(context.packageName, 0).versionCode
+
     return context.assets.open("codes/index")
         .reader()
         .readLines()
@@ -131,5 +134,5 @@ internal fun loadAllBrands(context: Context): Flow<SBrand> {
         .map { it.sBrand }
         .asFlow()
         .flowOn(Dispatchers.IO)
-        .asCached(context) // default cache key is the board of the device, which is fine since each board will have different IR specs
+        .asCached(context, "${Build.BOARD}+${versionNumber}")
 }

@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import xyz.regulad.supir.ir.loadAllBrands
+import xyz.regulad.supir.irdb.loadAllBrands
 import kotlin.time.Duration
 import kotlin.time.measureTimedValue
 

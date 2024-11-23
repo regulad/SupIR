@@ -1,4 +1,4 @@
-package xyz.regulad.supir.ir
+package xyz.regulad.supir.irdb
 
 import android.content.Context
 import android.content.Context.CONSUMER_IR_SERVICE
@@ -14,17 +14,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import xyz.regulad.supir.ir.IrEncoder.getFrequency
-import xyz.regulad.supir.ir.IrEncoder.timingString
-import xyz.regulad.supir.ir.TransmitterManager.transmitSuspending
+import xyz.regulad.supir.irdb.IrEncoder.getFrequency
+import xyz.regulad.supir.irdb.IrEncoder.initialTimingString
+import xyz.regulad.supir.irdb.IrEncoder.repeatTimingString
+import xyz.regulad.supir.irdb.TransmitterManager.transmitSuspending
 import java.util.*
 
 fun CarrierFrequencyRange.contains(frequency: Int): Boolean {
     return frequency in minFrequency..maxFrequency
-}
-
-fun CarrierFrequencyRange.toSensibleString(): String {
-    return "$minFrequency-$maxFrequency"
 }
 
 object TransmitterManager {
@@ -72,13 +69,24 @@ suspend fun Transmitter.transmitMicrosecondIntArray(frequency: Int, pattern: Int
 /*
  * Transmit the IRDBFunction blockingly
  */
-suspend fun IRDBFunction.transmit(context: Context, transmitter: Transmitter) {
+suspend fun IRDBFunction.transmitInitialPattern(context: Context, transmitter: Transmitter) {
     // we need to create the battery
 
-    val (frequency, timingString) = timingString(context)
+    val (frequency, timingString) = initialTimingString(context)
         ?: throw UnsupportedOperationException("Failed to get timing string for $protocol")
 
-    Log.d("IRDBFunction", "$protocol $device $subdevice $function -> ${timingString.joinToString(" ")}")
+    Log.d("IRDBFunction", "$protocol (init) $device $subdevice $function -> ${timingString.joinToString(" ")}")
+
+    transmitter.transmitMicrosecondIntArray(frequency.toInt(), timingString.map { it.toInt() }.toIntArray())
+}
+
+suspend fun IRDBFunction.transmitRepeatPattern(context: Context, transmitter: Transmitter) {
+    // we need to create the battery
+
+    val (frequency, timingString) = repeatTimingString(context)
+        ?: throw UnsupportedOperationException("Failed to get timing string for $protocol")
+
+    Log.d("IRDBFunction", "$protocol (rep.) $device $subdevice $function -> ${timingString.joinToString(" ")}")
 
     transmitter.transmitMicrosecondIntArray(frequency.toInt(), timingString.map { it.toInt() }.toIntArray())
 }

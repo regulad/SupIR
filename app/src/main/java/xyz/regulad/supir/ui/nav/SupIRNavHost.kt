@@ -33,10 +33,8 @@ import xyz.regulad.regulib.compose.firstState
 import xyz.regulad.regulib.compose.produceState
 import xyz.regulad.regulib.showToast
 import xyz.regulad.supir.SupIRViewModel
-import xyz.regulad.supir.ir.*
-import xyz.regulad.supir.ir.IrEncoder.transmissionLengthDuration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
+import xyz.regulad.supir.irdb.*
+import xyz.regulad.supir.irdb.IrEncoder.getIrpProcessor
 
 @Composable
 fun FullscreenLoader() {
@@ -530,42 +528,33 @@ fun SupIRNavHost(
                                         }
 
                                         try {
-                                            function.transmit(context, supIRViewModel.transmitter!!)
+                                            function.transmitInitialPattern(context, supIRViewModel.transmitter!!)
                                             context.showToast("Sent ${function.functionName} successfully.")
                                         } catch (e: Exception) {
                                             context.showToast("Failed to send ${function.functionName}: ${e.message}")
                                             return@detectTapGestures
                                         }
 
-                                        val retransmissionJob = transmissionScope.launch {
-                                            var transmissionLength = function.transmissionLengthDuration(context)
-
-                                            val isNecFamilyFunction = function.protocol
-                                                .uppercase()
-                                                .startsWith("NEC")
-                                            if (isNecFamilyFunction) {
-                                                // this is an NEC family function, they have a special repeat function
+                                        if (function.getIrpProcessor(context)?.canRepeat == true) {
+                                            val retransmissionJob = transmissionScope.launch {
+                                                delay(40)
                                                 while (isActive) {
-                                                    val transmissionDelay =
-                                                        (108).toDuration(DurationUnit.MILLISECONDS) - transmissionLength!! // guaranteed with NEC
-                                                    delay(transmissionDelay)
-
-                                                    // transmit the repeat pattern
-                                                    supIRViewModel.transmitter.transmitMicrosecondIntArray(
-                                                        38000,
-                                                        necRepeatPatternUs
-                                                    )
-                                                    transmissionLength =
-                                                        necRepeatPatternUs
-                                                            .sum()
-                                                            .toDuration(DurationUnit.MICROSECONDS)
+                                                    try {
+                                                        function.transmitRepeatPattern(
+                                                            context,
+                                                            supIRViewModel.transmitter
+                                                        )
+                                                        delay(108)
+                                                    } catch (e: Exception) {
+                                                        context.showToast("Failed to send ${function.functionName}: ${e.message}")
+                                                        return@launch
+                                                    }
                                                 }
                                             }
+
+                                            tryAwaitRelease()
+                                            retransmissionJob.cancelAndJoin()
                                         }
-
-                                        tryAwaitRelease()
-
-                                        retransmissionJob.cancel()
                                     }
                                 )
                             }
