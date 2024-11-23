@@ -13,8 +13,8 @@ android {
         applicationId = "xyz.regulad.supir"
         minSdk = 21
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -68,6 +68,8 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    implementation(libs.androidx.security.crypto)
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlin.reflect)

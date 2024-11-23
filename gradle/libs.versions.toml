@@ -12,8 +12,10 @@ composeBom = "2024.10.00"
 navigationCompose = "2.8.3"
 desugar_jdk_libs = "2.1.2"
 regulib = "1.5.1"
+securityCrypto = "1.1.0-alpha06"
 
 [libraries]
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
