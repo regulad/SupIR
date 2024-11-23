@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import xyz.regulad.regulib.compose.firstState
+import xyz.regulad.regulib.compose.toRoute
+import xyz.regulad.supir.ui.nav.FunctionRoute
+import xyz.regulad.supir.ui.nav.RouteWithTopBar
 import xyz.regulad.supir.ui.nav.SupIRNavHost
 import xyz.regulad.supir.ui.theme.SupIRTheme
 
@@ -29,7 +31,26 @@ class MainActivity : ComponentActivity() {
         setContent {
             SupIRTheme {
                 val navController = rememberNavController()
-                var scaffoldTopBarTitle by remember { mutableStateOf("SupIR") }
+
+                val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = currentBackStackEntry?.toRoute<Any>()
+
+                val scaffoldTopbarTitle = if (currentRoute is RouteWithTopBar) {
+                    currentRoute.topBarTitle
+                } else if (currentRoute is FunctionRoute) {
+                    // function routes are special because we need to fetch something from the viewmodel
+                    val functionRoute = currentRoute
+
+                    val allBrandsFlow = viewmodel.allBrands
+                    val brand = allBrandsFlow.firstState { it.name == functionRoute.brandName }
+                    val category = brand?.categories?.find { it.name == functionRoute.categoryName }
+                    val model = category?.models?.find { it.identifier == functionRoute.modelIdentifier }
+                    val function = model?.functions?.find { it.identifier == functionRoute.functionIdentifier }
+
+                    function?.let { "Press/hold to send ${it.functionName}" } ?: "Loading..."
+                } else {
+                    "SupIR"
+                }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -39,7 +60,7 @@ class MainActivity : ComponentActivity() {
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 titleContentColor = MaterialTheme.colorScheme.primary
                             ),
-                            title = { Text(scaffoldTopBarTitle) }
+                            title = { Text(scaffoldTopbarTitle) }
                         )
                     }
                 ) { innerPadding ->
@@ -47,7 +68,6 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding),
                         supIRViewModel = viewmodel,
                         navController = navController,
-                        setTopBarTitle = { title -> scaffoldTopBarTitle = title }
                     )
                 }
             }

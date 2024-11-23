@@ -51,20 +51,39 @@ fun FullscreenLoader() {
     }
 }
 
-@Serializable
-data object MainRoute
+interface RouteWithTopBar {
+    val topBarTitle: String
+}
 
 @Serializable
-data object UnsupportedRoute
+data object MainRoute : RouteWithTopBar {
+    override val topBarTitle: String
+        get() = "Select brand"
+}
 
 @Serializable
-data class BrandRoute(val brandName: String)
+data object UnsupportedRoute : RouteWithTopBar {
+    override val topBarTitle: String
+        get() = "Unsupported device"
+}
 
 @Serializable
-data class CategoryRoute(val brandName: String, val categoryName: String)
+data class BrandRoute(val brandName: String) : RouteWithTopBar {
+    override val topBarTitle: String
+        get() = "Select category of $brandName device"
+}
 
 @Serializable
-data class ModelRoute(val brandName: String, val categoryName: String, val modelIdentifier: String)
+data class CategoryRoute(val brandName: String, val categoryName: String) : RouteWithTopBar {
+    override val topBarTitle: String
+        get() = "Select model of $categoryName device"
+}
+
+@Serializable
+data class ModelRoute(val brandName: String, val categoryName: String, val modelIdentifier: String) : RouteWithTopBar {
+    override val topBarTitle: String
+        get() = "Select command"
+}
 
 @Serializable
 data class FunctionRoute(
@@ -79,8 +98,7 @@ data class FunctionRoute(
 fun SupIRNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController,
-    supIRViewModel: SupIRViewModel,
-    setTopBarTitle: (String) -> Unit
+    supIRViewModel: SupIRViewModel
 ) {
     val allBrandsFlow by produceState<Flow<SBrand>?>(null) {
         value = supIRViewModel.allBrands // this is a lazy value that will be loaded when first accessed
@@ -126,10 +144,6 @@ fun SupIRNavHost(
                         )
                     )
                 }
-            }
-
-            LaunchedEffect(Unit) {
-                setTopBarTitle("Select brand")
             }
 
             if (allBrandsFlow == null) {
@@ -298,10 +312,6 @@ fun SupIRNavHost(
                 }
             }
 
-            LaunchedEffect(brand) {
-                setTopBarTitle("Select category of ${brand?.name ?: "brand"} device")
-            }
-
             if (brand == null) {
                 FullscreenLoader()
             } else {
@@ -338,10 +348,6 @@ fun SupIRNavHost(
                         modelIdentifier = model.identifier
                     )
                 )
-            }
-
-            LaunchedEffect(brand, category) {
-                setTopBarTitle("Select model of ${category?.name ?: "device"}.")
             }
 
             if (category == null) {
@@ -385,10 +391,6 @@ fun SupIRNavHost(
                 )
             }
 
-            LaunchedEffect(brand, category, model) {
-                setTopBarTitle("Select command")
-            }
-
             if (model == null) {
                 FullscreenLoader()
             } else {
@@ -423,10 +425,6 @@ fun SupIRNavHost(
             if (function == null) {
                 FullscreenLoader()
                 return@composable
-            }
-
-            LaunchedEffect(function, brand, category) {
-                setTopBarTitle("Press/hold to send ${function.functionName}")
             }
 
             val context = LocalContext.current
@@ -479,10 +477,10 @@ fun SupIRNavHost(
                                                     // transmit the repeat pattern
                                                     supIRViewModel.transmitter.transmitMicrosecondIntArray(
                                                         38000,
-                                                        necRepeatPattern
+                                                        necRepeatPatternUs
                                                     )
                                                     transmissionLength =
-                                                        necRepeatPattern
+                                                        necRepeatPatternUs
                                                             .sum()
                                                             .toDuration(DurationUnit.MICROSECONDS)
                                                 }

@@ -7,5 +7,5 @@ import xyz.regulad.supir.ir.loadAllBrands
 
 class SupIRViewModel(application: Application) : AndroidViewModel(application) {
     val transmitter: Transmitter? = Transmitter.getTransmitterForDevice(application)
-    val allBrands by lazy { loadAllBrands(application) }
+    val allBrands = loadAllBrands(application)
 }

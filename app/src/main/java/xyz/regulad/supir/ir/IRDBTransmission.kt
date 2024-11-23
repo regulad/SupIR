@@ -14,14 +14,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import xyz.regulad.supir.ir.IrEncoder.frequency
-import xyz.regulad.supir.ir.IrEncoder.irpProtocolDefinition
+import xyz.regulad.supir.ir.IrEncoder.getFrequency
 import xyz.regulad.supir.ir.IrEncoder.timingString
 import xyz.regulad.supir.ir.TransmitterManager.transmitSuspending
 import java.util.*
 
 fun CarrierFrequencyRange.contains(frequency: Int): Boolean {
     return frequency in minFrequency..maxFrequency
+}
+
+fun CarrierFrequencyRange.toSensibleString(): String {
+    return "$minFrequency-$maxFrequency"
 }
 
 object TransmitterManager {
@@ -39,8 +42,11 @@ object TransmitterManager {
     private val protocolCompatibilityCache = mutableMapOf<String, Boolean>()
 
     fun IRDBFunction.isTransmittable(context: Context): Boolean =
-        protocolCompatibilityCache.getOrPut(protocol) {
-            return irpProtocolDefinition(context)?.frequency()?.let { freq ->
+        // dedupe mixed case protocols, they are all the same
+        protocolCompatibilityCache.getOrPut(protocol.uppercase()) {
+            // as far as frequency is concerned, the IRP is equivalent for any members of the same protocol
+            Log.d("TransmitterManager", "Checking compatibility for $protocol")
+            getFrequency(context)?.let { freq ->
                 // if the device has ConsumerIRManager, check to see if the frequency is supported
                 // if the device does not have ConsumerIRManager, we can assume that the frequency is supported
 

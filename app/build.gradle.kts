@@ -70,6 +70,7 @@ dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlin.reflect)
     implementation(libs.regulib.common)
     implementation(libs.regulib.compose)
 

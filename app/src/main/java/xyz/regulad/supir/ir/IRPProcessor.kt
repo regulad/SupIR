@@ -12,8 +12,12 @@ import kotlin.time.toDuration
 /**
  * IRP class for handling Infrared Remote Protocol
  * http://www.hifi-remote.com/wiki/index.php/IRP_Notation
+ *
+ * Heavily inspired by [MakeHex's implementation of IRP](https://github.com/probonopd/MakeHex)
+ *
+ * I, Parker Wahle, do not understand most of how this class works. Please add documentation if you understand!
  */
-class IRP(
+class IRPProcessor(
     var frequency: Double = 38400.0,
     var timeBase: Double = 1.0,
     var messageTime: Double = 0.0,
@@ -53,6 +57,35 @@ class IRP(
             (1..32).forEach { mask[it] = 2 * mask[it - 1] + 1 }
             return mask
         }
+
+        private fun addToHexList(hexList: MutableList<Double>, number: Double) {
+            if (number == 0.0) return
+
+            if (number > 0) {
+                if (hexList.size % 2 == 1) {
+                    hexList[hexList.lastIndex] += number
+                } else {
+                    hexList.add(number)
+                }
+            } else if (hexList.isNotEmpty()) {
+                if (hexList.size % 2 == 1) {
+                    hexList.add(-number)
+                } else {
+                    hexList[hexList.lastIndex] -= number
+                }
+            }
+        }
+
+        private fun getPair(result: IntArray, input: String) {
+            var current = input
+            for (nIndex in 0..1) {
+                val num = current.takeWhile { it.isDigit() }.toIntOrNull() ?: break
+                result[nIndex] = num
+                current = current.dropWhile { it.isDigit() }
+                if (current.length < 2 || current[0] != '.' || !current[1].isDigit()) break
+                current = current.drop(1)
+            }
+        }
     }
 
     internal val config = IRPConfig(
@@ -65,14 +98,14 @@ class IRP(
     )
 
     fun readIrpString(str: String): Boolean {
-        str.lines().filter { it.isNotEmpty() }.forEach { line ->
-            val cleanLine = line.uppercase().replace(Regex("\\s+"), "").substringBefore("'")
-            try {
-                processLine(cleanLine)
-            } catch (e: Exception) {
-                Log.e("IRP", "Error processing line: $line", e)
+        str.lines().map { it.uppercase().substringBefore("'").trim() }.filter { it.isNotEmpty() }
+            .forEach { line ->
+                try {
+                    processLine(line)
+                } catch (e: Exception) {
+                    Log.e("IRP", "Error processing line: \"$line\"", e)
+                }
             }
-        }
 
         if (config.device[1] >= 0) config.def['S' - 'A'] = null
         if (config.functions[1] >= 0) config.def['N' - 'A'] = null
@@ -344,47 +377,17 @@ class IRP(
         return Pair(hex, cumulative)
     }
 
-    private fun getPair(result: IntArray, input: String) {
-        var current = input
-        for (nIndex in 0..1) {
-            val num = current.takeWhile { it.isDigit() }.toIntOrNull() ?: break
-            result[nIndex] = num
-            current = current.dropWhile { it.isDigit() }
-            if (current.length < 2 || current[0] != '.' || !current[1].isDigit()) break
-            current = current.drop(1)
-        }
-    }
-
-
     fun generateRawData(): Triple<Int, Int, DoubleArray> {
         val (hex, cumulative) = genHex(form ?: "")
         if (cumulative < messageTime) {
-            addToHex(hex, cumulative - messageTime)
+            addToHexList(hex, cumulative - messageTime)
         }
         if (hex.size % 2 == 1) {
-            addToHex(hex, -1.0)
+            addToHexList(hex, -1.0)
         }
         val single = hex.size / 2
 
         return Triple(single, hex.size / 2 - single, hex.toDoubleArray())
-    }
-
-    private fun addToHex(hex: MutableList<Double>, number: Double) {
-        if (number == 0.0) return
-
-        if (number > 0) {
-            if (hex.size % 2 == 1) {
-                hex[hex.lastIndex] += number
-            } else {
-                hex.add(number)
-            }
-        } else if (hex.isNotEmpty()) {
-            if (hex.size % 2 == 1) {
-                hex.add(-number)
-            } else {
-                hex[hex.lastIndex] -= number
-            }
-        }
     }
 }
 
@@ -412,7 +415,7 @@ object IrEncoder {
         }
     }
 
-    fun IRDBFunction.irpProtocolDefinition(context: Context): String? {
+    private fun IRDBFunction.irpProtocolDefinition(context: Context): String? {
         val protocolDefinitions = getProtocolDefinitions(context)
         var protocolDef = protocolDefinitions[protocol.uppercase()]
 
@@ -432,22 +435,7 @@ object IrEncoder {
         return protocolDef
     }
 
-    fun String.frequency(): Double {
-        return this.split(" ").filter { it.isNotEmpty() }.filter { it.uppercase().startsWith("FREQUENCY=") }
-            .map { it.substringAfter("=").toDouble() }.firstOrNull() ?: 38400.0
-    }
-
-    /**
-     * Encodes an IR signal based on the given protocol and parameters.
-     *
-     * @param protocol The name of the IR protocol to use for encoding.
-     * @param device The device code for the IR signal.
-     * @param subdevice The subdevice code for the IR signal (use -1 if not applicable).
-     * @param function The function code for the IR signal.
-     * @return A string containing the encoded IR signal as space-separated durations,
-     *         or null if the protocol is not supported or an error occurs.
-     */
-    private fun IRDBFunction.calculateTimingString(context: Context): Pair<Double, DoubleArray>? {
+    private fun IRDBFunction.generateIrpProcessor(context: Context): IRPProcessor? {
         // Prepare the IRP string
         val irp = StringBuilder()
 
@@ -466,7 +454,7 @@ object IrEncoder {
         irp.append(protocolDef)
 
         // Encode
-        val irpProcessor = IRP()
+        val irpProcessor = IRPProcessor()
 
         try {
             if (!irpProcessor.readIrpString(irp.toString())) {
@@ -480,9 +468,31 @@ object IrEncoder {
         // Generate the IR sequence
         irpProcessor.config.def['D' - 'A'] = device.toString()
         irpProcessor.config.def['S' - 'A'] =
-            (if (subdevice != -1) subdevice else device.inv()).toString() // "CRC" for NEC
+            (if (subdevice != -1) subdevice else device.inv()).toString() // inverted checksum for NEC in subdevice slot
         irpProcessor.config.def['F' - 'A'] = function.toString()
-        irpProcessor.config.def['N' - 'A'] = (-1).toString();
+        irpProcessor.config.def['N' - 'A'] = (-1).toString()
+
+        return irpProcessor
+    }
+
+    private val irpProcessorCache =
+        Collections.synchronizedMap(WeakHashMap<Context, MutableMap<IRDBFunction, IRPProcessor?>>())
+
+    fun IRDBFunction.getFrequency(context: Context): Double? {
+        val irpProcessor = getIrpProcessor(context) ?: return null
+        return irpProcessor.frequency
+    }
+
+    /**
+     * Gets the IRPProcessor for the IRDBFunction
+     */
+    fun IRDBFunction.getIrpProcessor(context: Context) =
+        irpProcessorCache.getOrPut(context) { Collections.synchronizedMap(WeakHashMap()) }
+            .getOrPut(this) { generateIrpProcessor(context) }
+
+    private fun IRDBFunction.calculateTimingString(context: Context): Pair<Double, DoubleArray>? {
+        val irpProcessor = getIrpProcessor(context) ?: return null
+
         val (_, _, raw) = irpProcessor.generateRawData()
 
         // Convert the sequence to a string
@@ -514,7 +524,7 @@ object IrEncoder {
 
 //https://techdocs.altium.com/display/FPGA/NEC+Infrared+Transmission+Protocol
 @OptIn(ExperimentalTime::class)
-val necRepeatPattern = intArrayOf(
+val necRepeatPatternUs = intArrayOf(
     Duration.convert(9.0, DurationUnit.MILLISECONDS, DurationUnit.MICROSECONDS).toInt(),
     Duration.convert(2.25, DurationUnit.MILLISECONDS, DurationUnit.MICROSECONDS).toInt(),
     562.5.toInt()

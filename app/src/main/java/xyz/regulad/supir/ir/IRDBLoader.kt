@@ -131,5 +131,5 @@ internal fun loadAllBrands(context: Context): Flow<SBrand> {
         .map { it.sBrand }
         .asFlow()
         .flowOn(Dispatchers.IO)
-        .asCached(context)
+        .asCached(context) // default cache key is the board of the device, which is fine since each board will have different IR specs
 }
