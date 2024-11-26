@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MakeHex" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/flipper" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/irdb" vcs="Git" />
   </component>
 </project>

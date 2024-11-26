@@ -33,8 +33,8 @@ import xyz.regulad.regulib.compose.firstState
 import xyz.regulad.regulib.compose.produceState
 import xyz.regulad.regulib.showToast
 import xyz.regulad.supir.SupIRViewModel
-import xyz.regulad.supir.irdb.*
-import xyz.regulad.supir.irdb.IrEncoder.getIrpProcessor
+import xyz.regulad.supir.ir.*
+import xyz.regulad.supir.ir.IrEncoder.getCanRepeat
 
 @Composable
 fun FullscreenLoader() {
@@ -454,7 +454,7 @@ fun SupIRNavHost(
             val category = brand?.categories?.find { it.name == modelRoute.categoryName }
             val model = category?.models?.find { it.identifier == modelRoute.modelIdentifier }
 
-            fun navigateToFunction(function: IRDBFunction) {
+            fun navigateToFunction(function: IRFunction) {
                 navController.navigate(
                     FunctionRoute(
                         brand!!.name,
@@ -535,7 +535,7 @@ fun SupIRNavHost(
                                             return@detectTapGestures
                                         }
 
-                                        if (function.getIrpProcessor(context)?.canRepeat == true) {
+                                        if (function.getCanRepeat(context)) {
                                             val retransmissionJob = transmissionScope.launch {
                                                 delay(40)
                                                 while (isActive) {

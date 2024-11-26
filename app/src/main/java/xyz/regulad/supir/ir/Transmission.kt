@@ -1,4 +1,4 @@
-package xyz.regulad.supir.irdb
+package xyz.regulad.supir.ir
 
 import android.content.Context
 import android.content.Context.CONSUMER_IR_SERVICE
@@ -14,10 +14,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import xyz.regulad.supir.irdb.IrEncoder.getFrequency
-import xyz.regulad.supir.irdb.IrEncoder.initialTimingString
-import xyz.regulad.supir.irdb.IrEncoder.repeatTimingString
-import xyz.regulad.supir.irdb.TransmitterManager.transmitSuspending
+import xyz.regulad.supir.ir.IrEncoder.getFrequency
+import xyz.regulad.supir.ir.IrEncoder.initialTimingString
+import xyz.regulad.supir.ir.IrEncoder.repeatTimingString
+import xyz.regulad.supir.ir.TransmitterManager.transmitSuspending
 import java.util.*
 
 fun CarrierFrequencyRange.contains(frequency: Int): Boolean {
@@ -38,15 +38,22 @@ object TransmitterManager {
 
     private val protocolCompatibilityCache = mutableMapOf<String, Boolean>()
 
-    fun IRDBFunction.isTransmittable(context: Context): Boolean =
+    fun IRFunction.isTransmittable(context: Context): Boolean =
         // dedupe mixed case protocols, they are all the same
-        protocolCompatibilityCache.getOrPut(protocol.uppercase()) {
-            // as far as frequency is concerned, the IRP is equivalent for any members of the same protocol
-            Log.d("TransmitterManager", "Checking compatibility for $protocol")
-            getFrequency(context)?.let { freq ->
-                // if the device has ConsumerIRManager, check to see if the frequency is supported
-                // if the device does not have ConsumerIRManager, we can assume that the frequency is supported
+        if (protocol != null) {
+            protocolCompatibilityCache.getOrPut(protocol.uppercase()) {
+                // as far as frequency is concerned, the IRP is equivalent for any members of the same protocol
+                Log.d("TransmitterManager", "Checking compatibility for $protocol")
+                getFrequency(context)?.let { freq ->
+                    // if the device has ConsumerIRManager, check to see if the frequency is supported
+                    // if the device does not have ConsumerIRManager, we can assume that the frequency is supported
 
+                    val irService = context.getSystemService(CONSUMER_IR_SERVICE) as ConsumerIrManager?
+                    irService == null || irService.carrierFrequencies.any { it.contains(freq.toInt()) }
+                } ?: false
+            }
+        } else {
+            getFrequency(context)?.let { freq ->
                 val irService = context.getSystemService(CONSUMER_IR_SERVICE) as ConsumerIrManager?
                 irService == null || irService.carrierFrequencies.any { it.contains(freq.toInt()) }
             } ?: false
@@ -66,27 +73,24 @@ suspend fun Transmitter.transmitMicrosecondIntArray(frequency: Int, pattern: Int
     transmitSuspending(transmitInfo)
 }
 
-/*
- * Transmit the IRDBFunction blockingly
- */
-suspend fun IRDBFunction.transmitInitialPattern(context: Context, transmitter: Transmitter) {
+suspend fun IRFunction.transmitInitialPattern(context: Context, transmitter: Transmitter) {
     // we need to create the battery
 
     val (frequency, timingString) = initialTimingString(context)
         ?: throw UnsupportedOperationException("Failed to get timing string for $protocol")
 
-    Log.d("IRDBFunction", "$protocol (init) $device $subdevice $function -> ${timingString.joinToString(" ")}")
+    Log.d("IRFunction", "$protocol (init) $device $subDevice $function -> ${timingString.joinToString(" ")}")
 
     transmitter.transmitMicrosecondIntArray(frequency.toInt(), timingString.map { it.toInt() }.toIntArray())
 }
 
-suspend fun IRDBFunction.transmitRepeatPattern(context: Context, transmitter: Transmitter) {
+suspend fun IRFunction.transmitRepeatPattern(context: Context, transmitter: Transmitter) {
     // we need to create the battery
 
     val (frequency, timingString) = repeatTimingString(context)
         ?: throw UnsupportedOperationException("Failed to get timing string for $protocol")
 
-    Log.d("IRDBFunction", "$protocol (rep.) $device $subdevice $function -> ${timingString.joinToString(" ")}")
+    Log.d("IRFunction", "$protocol (rep.) $device $subDevice $function -> ${timingString.joinToString(" ")}")
 
     transmitter.transmitMicrosecondIntArray(frequency.toInt(), timingString.map { it.toInt() }.toIntArray())
 }

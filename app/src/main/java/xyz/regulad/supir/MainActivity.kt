@@ -51,21 +51,27 @@ class MainActivity : ComponentActivity() {
                 val currentBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = currentBackStackEntry?.toRoute<Any>()
 
-                val scaffoldTopbarTitle = if (currentRoute is RouteWithTopBar) {
-                    currentRoute.topBarTitle
-                } else if (currentRoute is FunctionRoute) {
-                    // function routes are special because we need to fetch something from the viewmodel
-                    val functionRoute = currentRoute
+                val scaffoldTopbarTitle = when (currentRoute) {
+                    is RouteWithTopBar -> {
+                        currentRoute.topBarTitle
+                    }
 
-                    val allBrandsFlow = viewmodel.allBrandsFlow
-                    val brand = allBrandsFlow.firstState { it.name == functionRoute.brandName }
-                    val category = brand?.categories?.find { it.name == functionRoute.categoryName }
-                    val model = category?.models?.find { it.identifier == functionRoute.modelIdentifier }
-                    val function = model?.functions?.find { it.identifier == functionRoute.functionIdentifier }
+                    is FunctionRoute -> {
+                        // function routes are special because we need to fetch something from the viewmodel
+                        val functionRoute = currentRoute
 
-                    function?.let { "Press/hold to send ${it.functionName}" } ?: "Loading..."
-                } else {
-                    "SupIR"
+                        val allBrandsFlow = viewmodel.allBrandsFlow
+                        val brand = allBrandsFlow.firstState { it.name == functionRoute.brandName }
+                        val category = brand?.categories?.find { it.name == functionRoute.categoryName }
+                        val model = category?.models?.find { it.identifier == functionRoute.modelIdentifier }
+                        val function = model?.functions?.find { it.identifier == functionRoute.functionIdentifier }
+
+                        function?.let { "Press/hold to send ${it.functionName}" } ?: "Loading..."
+                    }
+
+                    else -> {
+                        "SupIR"
+                    }
                 }
 
                 Scaffold(
@@ -99,7 +105,7 @@ class MainActivity : ComponentActivity() {
                                                 saveState = true
                                             }
                                             launchSingleTop = true
-                                            restoreState = true
+                                            restoreState = false
                                         }
                                     }
                                 )

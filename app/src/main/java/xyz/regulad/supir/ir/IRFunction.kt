@@ -1,4 +1,4 @@
-package xyz.regulad.supir.irdb
+package xyz.regulad.supir.ir
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -14,16 +14,36 @@ import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class IRDBFunction(
+data class RawData(
+    val frequency: Int,
+    val dutyCycle: Double,
+    val data: List<Int>,
+)
+
+/**
+ * Represents an IR function that can be transmitted to a device.
+ *
+ * @property functionName The name of the function.
+ * @property protocol The IR protocol used to transmit the function. May be null for a raw IR function. Flipper-IRDB calls non-raw IR functions "Parsed", and they are interpreted by the [IRPProcessor]
+ *
+ * @property device The device code. Also called the "address". May be null for a raw IR function.
+ * @property subDevice The subdevice code. May be -1 if the protocol does not use subdevices. May be null for a raw IR function.
+ *
+ * @property function The function code. May be null for a raw IR function.
+ * @property rawData The raw IR data. May be null for a non-raw IR function.
+ */
+@Serializable
+data class IRFunction(
     val functionName: String,
-    val protocol: String,
-    val device: Int,
-    val subdevice: Int,
-    val function: Int,
+    val protocol: String?,
+    val device: Int?,
+    val subDevice: Int?,
+    val function: Int?,
+    val rawData: RawData? = null
 ) {
     val identifier: String
         get() {
-            return "'$functionName','$protocol','$device','$subdevice','$function'"
+            return "'$functionName','$protocol','$device','$subDevice','$function'"
         }
 
     val icon: ImageVector
@@ -88,6 +108,7 @@ data class IRDBFunction(
                 "tint" in lowerFunctionName -> Icons.Filled.BrightnessHigh
                 "aspect" in lowerFunctionName -> Icons.Filled.AspectRatio
                 "zoom" in lowerFunctionName -> Icons.Filled.ZoomIn
+                "eject" in lowerFunctionName -> Icons.Filled.Eject
                 else -> Icons.Filled.SettingsRemote
             }
         }
@@ -104,7 +125,7 @@ data class IRDBFunction(
                 )
             },
             headlineContent = { Text(functionName) },
-            supportingContent = { Text("${protocol.uppercase()} $device ($subdevice) $function") },
+            supportingContent = { Text("${protocol?.uppercase() ?: "RAW"} ${device ?: "N/A"} (${subDevice ?: "N/A"}) ${function ?: "N/A"}") },
         )
     }
 }

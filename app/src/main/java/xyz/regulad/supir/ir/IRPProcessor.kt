@@ -1,4 +1,4 @@
-package xyz.regulad.supir.irdb
+package xyz.regulad.supir.ir
 
 import android.content.Context
 import android.util.Log
@@ -14,9 +14,10 @@ import kotlin.experimental.inv
  */
 class IRPProcessor {
     var frequency: Double = 0.0 // without a frequency line, assume each is baseband
-    var timeBase: Double = 1.0
-    var messageTime: Double = 0.0
-    var isMsb: Boolean = false
+        private set
+    private var timeBase: Double = 1.0
+    private var messageTime: Double = 0.0
+    private var isMsb: Boolean = false
     private var bitGroup: Int = 2
 
     private var prefix: String? = null
@@ -35,11 +36,20 @@ class IRPProcessor {
         get() = form?.substringAfter(";", "")
 
     companion object {
+        /**
+         * Precedence of the operators in the IRP notation, used recursively in the parser.
+         */
         enum class Precedence { UNARY, TIMES, PLUS, COLON }
+
+        /**
+         * Arbitrary value in the IRP notation, used in the parser.
+         */
         data class Value(var value: Double, var bits: Int)
 
         /**
-         * Parses a value that may be interspersed with letters and letter into a Value tuple
+         * Parses a value that may be interspersed with letters and letter into a Value tuple relative to a given IRPConfig.
+         *
+         * This function does not modify the IRPConfig, it is a pure function.
          */
         private fun parseVal(input: String, config: IRPConfig, prec: Precedence = Precedence.UNARY): Value {
             var result = Value(0.0, 0)
@@ -50,12 +60,10 @@ class IRPProcessor {
                     val letter = input[i]
                     i++
 
-                    config.getLetterDefinition(letter)?.let { result = parseVal(it, config) } ?: run {
-                        result.value = config.getLetterValue(letter).toDouble()
-                    }
+                    config.getLetterDefinition(letter)?.let { result = parseVal(it, config) }
                 }
 
-                input[i] in '0'..'9' -> {
+                input[i].isDigit() -> {
                     result.value = input.substring(i).takeWhile { it.isDigit() }.toDouble()
                     i += result.value.toString().length
                 }
@@ -151,7 +159,6 @@ class IRPProcessor {
         class IRPConfig {
             val digits: Array<String?> = arrayOfNulls(16)
             private val definitions: Array<String?> = arrayOfNulls(26)
-            private val values: IntArray = IntArray(26)
             val device: IntArray = intArrayOf(-1, -1)
             val functions: IntArray = intArrayOf(-1, -1, -1, -1)
             val mask: IntArray = createMask()
@@ -165,13 +172,6 @@ class IRPProcessor {
 
             fun getLetterDefinition(letter: Char) =
                 definitions[letter.uppercase().toCharArray().first() - 'A']
-
-            fun setLetterValue(letter: Char, value: Int) {
-                values[letter.uppercase().toCharArray().first() - 'A'] = value
-            }
-
-            fun getLetterValue(letter: Char) =
-                values[letter.uppercase().toCharArray().first() - 'A']
         }
 
         private fun reverse(number: Int): Int = number.let { n ->
@@ -528,7 +528,9 @@ object IrEncoder {
         }
     }
 
-    private fun IRDBFunction.irpProtocolDefinition(context: Context): String? {
+    private fun IRFunction.irpProtocolDefinition(context: Context): String? {
+        if (protocol == null) return null
+
         val protocolDefinitions = getProtocolDefinitions(context)
         var protocolDef = protocolDefinitions[protocol.uppercase()]
 
@@ -548,7 +550,7 @@ object IrEncoder {
         return protocolDef
     }
 
-    fun IRDBFunction.getIrpProcessor(context: Context): IRPProcessor? {
+    private fun IRFunction.getIrpProcessor(context: Context): IRPProcessor? {
         // Prepare the IRP string
         val irp = StringBuilder()
 
@@ -573,20 +575,24 @@ object IrEncoder {
 
         // Generate the IR sequence
         irpProcessor.config.setLetterDefinition('D', device.toString())
-        if (subdevice != -1) {
-            irpProcessor.config.setLetterDefinition('S', subdevice.toString())
+        if (subDevice != -1) {
+            irpProcessor.config.setLetterDefinition('S', subDevice.toString())
         }
         irpProcessor.config.setLetterDefinition('F', function.toString())
 
         return irpProcessor
     }
 
-    fun IRDBFunction.getFrequency(context: Context): Double? {
-        val irpProcessor = getIrpProcessor(context) ?: return null
-        return irpProcessor.frequency
+    fun IRFunction.getFrequency(context: Context): Double? {
+        return getIrpProcessor(context)?.frequency ?: rawData?.frequency?.toDouble()
     }
 
-    fun IRDBFunction.initialTimingString(context: Context): Pair<Double, DoubleArray>? {
+    fun IRFunction.initialTimingString(context: Context): Pair<Double, DoubleArray>? {
+        if (rawData != null) {
+            return Pair(rawData.frequency.toDouble(), rawData.data.map { it.toDouble() }.toDoubleArray())
+        }
+
+        // if protocol is null then this will return null
         val irpProcessor = getIrpProcessor(context) ?: return null
 
         val raw = irpProcessor.generateRawData(false)
@@ -595,12 +601,18 @@ object IrEncoder {
         return Pair(irpProcessor.frequency, raw)
     }
 
-    fun IRDBFunction.repeatTimingString(context: Context): Pair<Double, DoubleArray>? {
+    fun IRFunction.repeatTimingString(context: Context): Pair<Double, DoubleArray>? {
         val irpProcessor = getIrpProcessor(context) ?: return null
+
+        if (!irpProcessor.canRepeat) return null
 
         val raw = irpProcessor.generateRawData(true)
 
         // Convert the sequence to a string
         return Pair(irpProcessor.frequency, raw)
+    }
+
+    fun IRFunction.getCanRepeat(context: Context): Boolean {
+        return repeatTimingString(context) != null
     }
 }

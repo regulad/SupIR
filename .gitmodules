@@ -7,3 +7,6 @@
 [submodule "flipper"]
 	path = flipper
 	url = https://github.com/Lucaslhm/Flipper-IRDB
+[submodule "irext"]
+	path = irext
+	url = https://opensource.irext.net/irext/database.git

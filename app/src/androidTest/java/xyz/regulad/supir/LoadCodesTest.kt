@@ -5,15 +5,28 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import xyz.regulad.supir.irdb.loadAllBrands
+import xyz.regulad.supir.ir.loadAllBrands
+import java.io.File
 import kotlin.time.Duration
 import kotlin.time.measureTimedValue
 
 @RunWith(AndroidJUnit4::class)
 class LoadCodesTest {
     private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+
+    @After
+    fun tearDown() {
+        File(appContext.cacheDir, "regulib_flow_cache.db").delete()
+    }
+
+    @Before
+    fun setUp() {
+        File(appContext.cacheDir, "regulib_flow_cache.db").delete()
+    }
 
     @Test
     fun testLoadCodes() = runTest(

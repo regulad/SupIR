@@ -20,7 +20,7 @@ out of luck. Consider finding a device like a Samsung Galaxy S4/S5 and bringing 
 ## Features
 
 * Control your TV, soundbar, projector, and more
-* Largest IR database on the internet
+* Combines several IR databases for maximum compatibility
 * Save your favorite devices for quick access
 * Super fast load times, app sized <50MB
 * Totally open-source
@@ -99,6 +99,10 @@ this program for any purpose.
 
 If you do not agree to these conditions, you have no permission to use, copy,
 modify or distribute this program.
+
+### Flipper-IRDB
+
+Currently unlicensed. See https://github.com/Lucaslhm/Flipper-IRDB/pull/843 for progress.
 
 ### IR Icon
 
