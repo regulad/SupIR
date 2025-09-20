@@ -1,0 +1,1 @@
+a general-purpose IR blaster using the irdb database
