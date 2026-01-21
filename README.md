@@ -47,7 +47,7 @@ blasters. 16 hours of work later, I had SupIR.
 
 This app includes IR code sequences from irdb, the license for which is as follows, while the SupIR code itself is licensed under GPL-v3. These IR sequences are data files that SupIR processes, similar to how a media player might ship with sample media files. Under GPL-v3 Section 5, SupIR (GPL-v3) and the IR database constitute separate and independent works distributed as an aggregate, not a combined work, and the IR sequences can be replaced or removed without recompiling SupIR. This can be done during package-time or with a Magisk-type shim.
 
-Almost all MakeHex code in this project has been reimplemented using MakeHex, its behavior, and other non-proprietary reference materials as reference. The original license of MakeHex is included below for the sake of completeness.
+Almost all non-trivial (<10 SLoC) portions MakeHex code present in this project has been reimplemented using MakeHex, its behavior, and other non-proprietary reference materials as reference. While the MakeHex license *should* be GPLv3-compatible since it permits redistrbution the original license of MakeHex is included below for the sake of completeness. 
 
 ### irdb
 
