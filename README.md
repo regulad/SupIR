@@ -47,6 +47,8 @@ blasters. 16 hours of work later, I had SupIR.
 
 SupIR is licensed under the GPLv3. Non-GPL compatible licenses of its dependencies are listed below.
 
+For the purpose of enforcing the GPLv3, I am treating `irdb` like a dynamically-linked library/proprietary asset. This project is therefore NOT a combined work with `irdb`. If this gray-area is not desirable for your particular use-case, you may compile SupIR without `irdb`.
+
 ### irdb
 
 https://github.com/probonopd/irdb
