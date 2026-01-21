@@ -45,9 +45,7 @@ blasters. 16 hours of work later, I had SupIR.
 
 ## Licenses
 
-SupIR is licensed under the GPLv3. Non-GPL compatible licenses of its dependencies are listed below.
-
-For the purpose of enforcing the GPLv3, I am treating `irdb` like a dynamically-linked library/proprietary asset. This project is therefore NOT a combined work with `irdb`. If this gray-area is not desirable for your particular use-case, you may compile SupIR without `irdb`.
+This app includes IR code sequences from irdb, the license for which is as follows, while the SupIR code itself is licensed under GPL-v3. These IR sequences are data files that SupIR processes, similar to how a media player might ship with sample media files. Under GPL-v3 Section 5, SupIR (GPL-v3) and the IR database constitute separate and independent works distributed as an aggregate, not a combined work, and the IR sequences can be replaced or removed without recompiling SupIR. This can be done during package-time or with a Magisk-type shim.
 
 ### irdb
 
