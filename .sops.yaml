@@ -1,0 +1,9 @@
+# Files named *.sops.<json|yaml|yml|env> are encrypted to these age recipients:
+# Parker's own key, and a key made only for this repository's GitHub Actions,
+# whose identity is the SOPS_AGE_KEY secret. Decrypt with `sops decrypt <file>`;
+# the matching identity lives in the sops age keys file, never in git.
+creation_rules:
+  - path_regex: \.sops\.(json|ya?ml|env)$
+    age: >-
+      age14e7wj4lltcvva2jy9vzzul8y7yuj5xk9vtqfxt9erzz58xqwmpjqurdhep,
+      age1krq3pyderhgz3mrrgu242j6rgauzta0xw33zhcyj04w4uxlkuajssz45zq
