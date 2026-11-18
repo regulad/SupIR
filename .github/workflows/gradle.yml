@@ -34,6 +34,10 @@ jobs:
           cache: 'gradle'
           # we don't need to declare any additional cache paths, the cache already catches everything
       - uses: android-actions/setup-android@v3
+        with:
+          # the default, "tools platform-tools", fails: Google's SDK
+          # repository no longer has the legacy tools package
+          packages: "platform-tools"
       - run: "chmod +x ./gradlew"  # this project is used from windows, so it can be messed up
       - if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         name: "Build Debug APK"
