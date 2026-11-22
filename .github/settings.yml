@@ -1,0 +1,16 @@
+# Repository configuration, managed by the Settings app
+# (https://github.com/repository-settings/app). The shared defaults come from
+# regulad/.github; this file sets only what is this repository's own.
+_extends: .github
+
+repository:
+  name: SupIR
+  description: >-
+    SupIR is an open-source general-purpose IR blaster for Android using the
+    irdb database. Inspired by the now-abandoned AndroidInfraRed, SupIR puts the
+    power of a Universal Remote or a Flipper Zero in your pocket.
+  homepage: ""
+  private: false
+  # Topics: comma-and-space separated string, NOT a YAML list.
+  topics: android, infrared, infrared-control, internet-of-things
+  default_branch: master
