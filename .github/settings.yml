@@ -6,9 +6,7 @@ _extends: .github
 repository:
   name: SupIR
   description: >-
-    SupIR is an open-source general-purpose IR blaster for Android using the
-    irdb database. Inspired by the now-abandoned AndroidInfraRed, SupIR puts the
-    power of a Universal Remote or a Flipper Zero in your pocket.
+    Open-source IR blaster for Android, using the irdb database
   homepage: ""
   private: false
   # Topics: comma-and-space separated string, NOT a YAML list.
