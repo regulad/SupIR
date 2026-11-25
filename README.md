@@ -2,6 +2,8 @@
 
 [![Get it on IzzyOnDroid](https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png)](https://apt.izzysoft.de/fdroid/index/apk/xyz.regulad.supir)
 
+[![IzzyOnDroid yearly downloads](https://img.shields.io/badge/dynamic/json?url=https://dlstats.izzyondroid.org/iod-stats-collector/stats/basic/yearly/rolling.json&query=$.['xyz.regulad.supir']&label=IzzyOnDroid%20yearly%20downloads)](https://apt.izzysoft.de/packages/xyz.regulad.supir)
+
 SupIR is an open-source general-purpose IR blaster for Android using the [irdb](https://github.com/probonopd/irdb)
 database. Inspired by the now-abandoned [AndroidInfraRed](https://github.com/OneButtonDeveloper/AndroidInfraRed), SupIR
 puts the power of a Universal Remote or a Flipper Zero in your pocket.
