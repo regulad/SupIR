@@ -1,6 +1,6 @@
 # ![SupIR Icon](app/src/main/res/mipmap-mdpi/ic_launcher.webp) SupIR
 
-[![Get it on IzzyOnDroid](https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png)](https://apt.izzysoft.de/fdroid/index/apk/xyz.regulad.supir)
+[<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroidButtonGreyBorder_nofont.png" height="80" alt="Get it on IzzyOnDroid">](https://apt.izzysoft.de/packages/xyz.regulad.supir)
 
 [![IzzyOnDroid yearly downloads](https://img.shields.io/badge/dynamic/json?url=https://dlstats.izzyondroid.org/iod-stats-collector/stats/basic/yearly/rolling.json&query=$.['xyz.regulad.supir']&label=IzzyOnDroid%20yearly%20downloads)](https://apt.izzysoft.de/packages/xyz.regulad.supir)
 
